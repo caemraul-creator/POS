@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS & Gudang Online</title>
+    <!-- Favicon dummy biar gak error 404 -->
+    <link rel="icon" href="data:,">
+    <style>
+        :root { --primary: #2563eb; --bg: #f3f4f6; --white: #ffffff; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        
+        .header { background: var(--primary); color: white; padding: 15px; text-align: center; }
+        .nav-btn { background: white; color: var(--primary); border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        
+        #role-screen { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; }
+        .role-btn { padding: 20px 40px; font-size: 1.2rem; border: none; border-radius: 10px; cursor: pointer; color: white; width: 80%; max-width: 300px; }
+        .btn-kasir { background: #10b981; }
+        .btn-gudang { background: #f59e0b; }
+
+        .card { background: var(--white); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+        input { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; border: 1px solid #ddd; border-radius: 5px; }
+        button { cursor: pointer; padding: 10px; border: none; border-radius: 5px; width: 100%; }
+        .btn-add { background: var(--primary); color: white; }
+        .btn-pay { background: #10b981; color: white; font-weight: bold; margin-top: 10px; }
+        
+        .cart-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; }
+        .product-btn { padding: 15px; background: #e5e7eb; border-radius: 8px; text-align: center; cursor: pointer; }
+        .product-btn:active { background: #d1d5db; }
+        .product-btn.out-of-stock { opacity: 0.5; pointer-events: none; }
+
+        .hidden { display: none; }
+        
+        /* Pesan Error Kecil */
+        .conn-status { font-size: 12px; margin-top: 10px; color: #666; }
+    </style>
+</head>
+<body>
+
+    <!-- LAYER 1: Pemilihan Peran -->
+    <div id="role-screen">
+        <h2>Pilih Mode Perangkat</h2>
+        <button class="role-btn btn-kasir" id="btn-kasir">📲 KASIR (HP)</button>
+        <button class="role-btn btn-gudang" id="btn-gudang">📦 GUDANG (Tablet)</button>
+        <div class="conn-status" id="conn-status">Menghubungkan ke database...</div>
+    </div>
+
+    <!-- LAYER 2: Aplikasi Kasir -->
+    <div id="kasir-screen" class="hidden">
+        <div class="header">
+            <h3>Mode Kasir</h3>
+            <button class="nav-btn" onclick="resetRole()">Keluar</button>
+        </div>
+        <div class="container">
+            <div class="card">
+                <h4>Pilih Produk</h4>
+                <div id="product-list-kasir" class="grid"></div>
+            </div>
+            <div class="card">
+                <h4>Keranjang Belanja</h4>
+                <div id="cart-list"><p style="text-align:center; color:#888">Keranjang kosong</p></div>
+                <hr>
+                <h3 style="text-align:right">Total: Rp <span id="total-price">0</span></h3>
+                <button class="btn-pay" onclick="processPayment()">BAYAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LAYER 3: Aplikasi Gudang -->
+    <div id="gudang-screen" class="hidden">
+        <div class="header" style="background: #f59e0b;">
+            <h3>Manajemen Gudang</h3>
+            <button class="nav-btn" onclick="resetRole()">Keluar</button>
+        </div>
+        <div class="container">
+            <div class="card">
+                <h4>Tambah Produk Baru</h4>
+                <input type="text" id="new-name" placeholder="Nama Produk">
+                <input type="number" id="new-price" placeholder="Harga (Rp)">
+                <input type="number" id="new-stock" placeholder="Jumlah Stok">
+                <button class="btn-add" onclick="addProduct()">Tambah ke Database</button>
+            </div>
+            <div class="card">
+                <h4>Stok Saat Ini</h4>
+                <div id="stock-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (Cara Lama/Compat - Lebih Stabil) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <script>
+        // 1. Konfigurasi Firebase Anda
+        var firebaseConfig = {
+            apiKey: "AIzaSyAwkeEevD_HTk6etUAzaGrSo-PvsMCz1fc",
+            authDomain: "pos-kasir-gudang.firebaseapp.com",
+            databaseURL: "https://pos-kasir-gudang-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "pos-kasir-gudang",
+            storageBucket: "pos-kasir-gudang.firebasestorage.app",
+            messagingSenderId: "247002713216",
+            appId: "1:247002713216:web:1ab4e7c5876e05dac8ea65"
+        };
+
+        // 2. Inisialisasi
+        try {
+            firebase.initializeApp(firebaseConfig);
+            var db = firebase.database();
+            var productsRef = db.ref('products');
+            
+            // Jika sampai sini, koneksi berhasil
+            document.getElementById('conn-status').innerHTML = "<span style='color:green'>✔ Database Terhubung</span>";
+            
+            // Aktifkan tombol
+            document.getElementById('btn-kasir').onclick = function() { setRole('kasir'); };
+            document.getElementById('btn-gudang').onclick = function() { setRole('gudang'); };
+
+        } catch (e) {
+            document.getElementById('conn-status').innerHTML = "<span style='color:red'>✘ Gagal Koneksi: " + e.message + "</span>";
+            alert("Gagal menghubungkan ke Database. Cek koneksi internet Anda.");
+        }
+
+        // 3. Variabel Global
+        var productsData = {};
+        var cart = [];
+
+        // 4. Fungsi Navigasi
+        function setRole(role) {
+            localStorage.setItem('appRole', role);
+            document.getElementById('role-screen').classList.add('hidden');
+            if (role === 'kasir') {
+                document.getElementById('kasir-screen').classList.remove('hidden');
+                renderProductKasir();
+            } else {
+                document.getElementById('gudang-screen').classList.remove('hidden');
+                renderStockGudang();
+            }
+        }
+
+        function resetRole() {
+            localStorage.removeItem('appRole');
+            location.reload();
+        }
+
+        // Cek role saat load
+        var currentRole = localStorage.getItem('appRole');
+        if (currentRole) setRole(currentRole);
+
+        // 5. Fungsi Gudang
+        function addProduct() {
+            var name = document.getElementById('new-name').value;
+            var price = parseInt(document.getElementById('new-price').value);
+            var stock = parseInt(document.getElementById('new-stock').value);
+
+            if (!name || !price || !stock) {
+                alert("Lengkapi semua data!");
+                return;
+            }
+
+            productsRef.push({
+                name: name,
+                price: price,
+                stock: stock
+            }).then(function() {
+                alert("Produk berhasil ditambahkan!");
+                document.getElementById('new-name').value = '';
+                document.getElementById('new-price').value = '';
+                document.getElementById('new-stock').value = '';
+            }).catch(function(error) {
+                alert("Gagal menambah: " + error.message);
+            });
+        }
+
+        function updateStock(id, newStock) {
+            if(newStock < 0) newStock = 0;
+            var updates = {};
+            updates['/products/' + id + '/stock'] = newStock;
+            db.ref().update(updates);
+        }
+
+        function renderStockGudang() {
+            var container = document.getElementById('stock-list');
+            container.innerHTML = '';
+            for (var id in productsData) {
+                var p = productsData[id];
+                var html = '<div class="cart-item"><div><b>' + p.name + '</b><br><small>Rp ' + p.price.toLocaleString('id-ID') + '</small></div><div style="text-align:right"><b>Stok: ' + p.stock + '</b><br><button onclick="updateStock(\'' + id + '\', ' + (p.stock + 1) + ')" style="width:auto; padding:5px 10px; background:#10b981; color:white;">+</button> <button onclick="updateStock(\'' + id + '\', ' + (p.stock - 1) + ')" style="width:auto; padding:5px 10px; background:#ef4444; color:white;">-</button></div></div>';
+                container.innerHTML += html;
+            }
+        }
+
+        // 6. Fungsi Kasir
+        function renderProductKasir() {
+            var container = document.getElementById('product-list-kasir');
+            container.innerHTML = '';
+            for (var id in productsData) {
+                var p = productsData[id];
+                var html = '<div class="' + (p.stock > 0 ? 'product-btn' : 'product-btn out-of-stock') + '" onclick="addToCart(\'' + id + '\')"><b>' + p.name + '</b><br>Rp ' + p.price.toLocaleString('id-ID') + '<br><small>Stok: ' + p.stock + '</small></div>';
+                container.innerHTML += html;
+            }
+        }
+
+        function addToCart(id) {
+            var p = productsData[id];
+            if (p.stock <= 0) return;
+
+            var found = false;
+            for(var i=0; i<cart.length; i++) {
+                if (cart[i].id === id) {
+                    if (cart[i].qty < p.stock) {
+                        cart[i].qty++;
+                    } else {
+                        alert("Stok tidak mencukupi!");
+                    }
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                cart.push({ id: id, name: p.name, price: p.price, qty: 1 });
+            }
+            renderCart();
+        }
+        
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        function renderCart() {
+            var container = document.getElementById('cart-list');
+            container.innerHTML = '';
+            var total = 0;
+            if (cart.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#888">Keranjang kosong</p>';
+                document.getElementById('total-price').innerText = "0";
+                return;
+            }
+            
+            for (var i=0; i<cart.length; i++) {
+                var item = cart[i];
+                var subtotal = item.price * item.qty;
+                total += subtotal;
+                container.innerHTML += '<div class="cart-item"><div>' + item.name + ' (x' + item.qty + ')</div><div>Rp ' + subtotal.toLocaleString('id-ID') + ' <button onclick="removeFromCart(' + i + ')" style="width:auto; padding:2px 5px; background:#ef4444; color:white; margin-left:5px;">x</button></div></div>';
+            }
+            document.getElementById('total-price').innerText = total.toLocaleString('id-ID');
+        }
+
+        function processPayment() {
+            if (cart.length === 0) return alert("Keranjang kosong!");
+            
+            var updates = {};
+            for (var i=0; i<cart.length; i++) {
+                var item = cart[i];
+                var currentStock = productsData[item.id].stock;
+                updates['/products/' + item.id + '/stock'] = currentStock - item.qty;
+            }
+
+            db.ref().update(updates).then(function() {
+                alert("Pembayaran Berhasil!");
+                cart = [];
+                renderCart();
+            });
+        }
+
+        // 7. Listener Database (Realtime)
+        productsRef.on('value', function(snapshot) {
+            productsData = snapshot.val() || {};
+            var role = localStorage.getItem('appRole');
+            if (role === 'kasir') renderProductKasir();
+            if (role === 'gudang') renderStockGudang();
+        });
+
+    </script>
+</body>
+</html>
