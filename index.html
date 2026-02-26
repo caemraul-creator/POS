@@ -999,6 +999,100 @@
             .gudang-layout { flex-direction: column; }
             .gudang-left { width: 100%; max-height: 50vh; }
         }
+
+        /* =========== KASIR FULLSCREEN =========== */
+        .kasir-fullscreen {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg);
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .kasir-topbar {
+            background: var(--ink);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .kasir-search-bar {
+            background: var(--surface);
+            padding: 12px 14px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .kasir-pelanggan-bar {
+            background: var(--surface);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        /* Search dropdown */
+        .search-dropdown {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            max-height: 220px;
+            overflow-y: auto;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            z-index: 10;
+        }
+        .search-dropdown::-webkit-scrollbar { width: 4px; }
+        .search-dropdown::-webkit-scrollbar-thumb { background: #d0d5e8; }
+
+        .sdrop-item {
+            padding: 11px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .sdrop-item:last-child { border-bottom: none; }
+        .sdrop-item:hover { background: var(--surface2); }
+        .sdrop-item.disabled { opacity: 0.4; pointer-events: none; }
+        .sdrop-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+        .sdrop-price { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent); }
+        .sdrop-stock { font-size: 11px; padding: 2px 8px; border-radius: 5px; }
+
+        /* Cart scroll fills remaining space */
+        .kasir-cart-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 14px;
+        }
+        .kasir-cart-scroll::-webkit-scrollbar { width: 4px; }
+        .kasir-cart-scroll::-webkit-scrollbar-thumb { background: #d0d5e8; border-radius: 2px; }
+
+        /* Footer always at bottom */
+        .kasir-footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 14px 16px;
+            flex-shrink: 0;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+        }
+
+        .footer-summary {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+        }
     </style>
 </head>
 <body>
@@ -1025,63 +1119,69 @@
 
 <!-- KASIR SCREEN -->
 <div id="kasir-screen" class="hidden">
-    <div class="app-layout">
-        <!-- Kiri: Produk -->
-        <div class="panel-left">
-            <div class="panel-topbar">
-                <span class="topbar-title">POS Pro</span>
-                <span class="topbar-tag tag-kasir">KASIR</span>
-                <a href="pelanggan.html" style="padding:6px 12px; background:#eef2ff; color:var(--accent); border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; border:1px solid #c5d0fa;">👥 Pelanggan</a>
-                <button class="exit-btn" onclick="resetRole()">Keluar</button>
+    <div class="kasir-fullscreen">
+
+        <!-- Header -->
+        <div class="kasir-topbar">
+            <span class="topbar-title" style="font-size:15px; font-weight:700; color:#fff;">🏪 POS Kasir</span>
+            <a href="pelanggan.html" style="padding:6px 12px; background:rgba(255,255,255,0.12); color:#fff; border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; border:1px solid rgba(255,255,255,0.2);">👥</a>
+            <button class="exit-btn" onclick="resetRole()" style="background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.2);">Keluar</button>
+        </div>
+
+        <!-- Search + Scan -->
+        <div class="kasir-search-bar">
+            <div class="search-wrap" style="flex:1;">
+                <span class="icon-search">🔍</span>
+                <input type="text" class="search-input" id="search-kasir" placeholder="Ketik nama produk lalu Enter..." oninput="filterProducts()" onkeydown="onSearchEnter(event)" style="background:#fff;">
             </div>
-            <div class="search-bar">
-                <div class="search-wrap">
-                    <span class="icon-search">🔍</span>
-                    <input type="text" class="search-input" id="search-kasir" placeholder="Cari produk..." oninput="filterProducts()">
-                </div>
-                <button class="barcode-btn" onclick="openScanner('kasir')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
-                        <line x1="7" y1="8" x2="7" y2="16"/><line x1="10" y1="8" x2="10" y2="16"/>
-                        <line x1="13" y1="8" x2="13" y2="16"/><line x1="16" y1="8" x2="16" y2="16"/>
-                    </svg>
-                    Scan
-                </button>
-            </div>
-            <div class="product-scroll">
-                <div class="product-grid" id="product-list-kasir"></div>
+            <button class="barcode-btn" onclick="openScanner('kasir')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                    <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
+                    <line x1="7" y1="8" x2="7" y2="16"/><line x1="10" y1="8" x2="10" y2="16"/>
+                    <line x1="13" y1="8" x2="13" y2="16"/><line x1="16" y1="8" x2="16" y2="16"/>
+                </svg>
+                Scan
+            </button>
+        </div>
+
+        <!-- Dropdown hasil pencarian -->
+        <div id="search-dropdown" class="search-dropdown hidden"></div>
+
+        <!-- Pelanggan -->
+        <div class="kasir-pelanggan-bar">
+            <span style="font-size:12px; font-weight:700; color:var(--ink2); white-space:nowrap;">Pelanggan:</span>
+            <select id="kasir-pelanggan" onchange="onPelangganChange()" style="flex:1; padding:8px 10px; border:1.5px solid var(--border); border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--ink); background:var(--bg); outline:none;">
+                <option value="">— Umum —</option>
+            </select>
+            <div id="pelanggan-info-tag" style="font-size:11px; color:var(--ink3); white-space:nowrap;"></div>
+        </div>
+
+        <!-- Cart Items (scrollable) -->
+        <div class="kasir-cart-scroll" id="cart-list">
+            <div class="cart-empty">
+                <div class="empty-icon">🛒</div>
+                <span>Scan barcode atau cari produk</span>
             </div>
         </div>
 
-        <!-- Kanan: Keranjang -->
-        <div class="panel-right">
-            <div class="cart-header">
-                <h3>Keranjang</h3>
-                <small id="cart-count">0 item</small>
-            </div>
-            <!-- Pilih Pelanggan -->
-            <div style="padding:10px 16px; border-bottom:1px solid var(--border); flex-shrink:0;">
-                <div style="font-size:11px; font-weight:700; color:var(--ink2); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Pelanggan</div>
-                <select id="kasir-pelanggan" onchange="onPelangganChange()" style="width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--ink); background:var(--bg); outline:none;">
-                    <option value="">— Umum (Tanpa Member) —</option>
-                </select>
-                <div id="pelanggan-info-tag" style="margin-top:6px; font-size:12px; color:var(--ink3); min-height:16px;"></div>
-            </div>
-            <div class="cart-scroll" id="cart-list">
-                <div class="cart-empty">
-                    <div class="empty-icon">🛒</div>
-                    <span>Pilih produk untuk mulai</span>
+        <!-- Footer selalu di bawah -->
+        <div class="kasir-footer">
+            <div class="footer-summary">
+                <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--ink3); margin-bottom:4px;">
+                    <span>Item: <b id="cart-count" style="color:var(--ink);">0</b></span>
+                    <span>Subtotal</span>
                 </div>
-            </div>
-            <div class="cart-footer">
-                <div class="summary-row"><span>Subtotal</span><span id="subtotal-price">Rp 0</span></div>
-                <div class="summary-total">
-                    <span class="label">TOTAL</span>
-                    <span class="amount" id="total-price">Rp 0</span>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:13px; color:var(--ink2);">Total Bayar</span>
+                    <span style="font-family:'DM Mono',monospace; font-size:22px; font-weight:800; color:var(--ink);" id="total-price">Rp 0</span>
                 </div>
-                <button class="pay-btn" onclick="processPayment()">BAYAR SEKARANG →</button>
+                <span id="subtotal-price" style="display:none;"></span>
             </div>
+            <button class="pay-btn" onclick="processPayment()" style="border-radius:14px; font-size:16px; padding:16px; margin-top:12px;">
+                BAYAR SEKARANG →
+            </button>
         </div>
+
     </div>
 </div>
 
@@ -1330,7 +1430,7 @@ function setRole(role) {
     document.getElementById('role-screen').classList.add('hidden');
     if (role === 'kasir') {
         document.getElementById('kasir-screen').classList.remove('hidden');
-        renderProductKasir();
+        loadPelangganDropdown();
     } else {
         document.getElementById('gudang-screen').classList.remove('hidden');
         renderStockGudang();
@@ -1400,37 +1500,60 @@ function getEffectivePrice(productId, qty) {
 
 // ========== KASIR ==========
 function filterProducts() {
-    renderProductKasir();
-}
+    var q = (document.getElementById('search-kasir').value || '').trim().toLowerCase();
+    var dropdown = document.getElementById('search-dropdown');
+    if (!q) { dropdown.classList.add('hidden'); dropdown.innerHTML = ''; return; }
 
-function renderProductKasir() {
-    var q = (document.getElementById('search-kasir').value || '').toLowerCase();
-    var container = document.getElementById('product-list-kasir');
-    container.innerHTML = '';
     var keys = Object.keys(productsData);
     var filtered = keys.filter(function(id) {
         var p = productsData[id];
         return p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q));
-    });
+    }).slice(0, 8);
 
     if (filtered.length === 0) {
-        container.innerHTML = '<p style="color:var(--ink3); font-size:13px; grid-column:1/-1; padding:20px 0;">Produk tidak ditemukan</p>';
+        dropdown.classList.remove('hidden');
+        dropdown.innerHTML = '<div style="padding:14px 16px; font-size:13px; color:var(--ink3); text-align:center;">Produk tidak ditemukan</div>';
         return;
     }
 
+    dropdown.classList.remove('hidden');
+    dropdown.innerHTML = '';
     filtered.forEach(function(id) {
         var p = productsData[id];
-        var stockClass = p.stock <= 0 ? 'empty' : p.stock <= 5 ? 'low' : '';
-        var stockLabel = p.stock <= 0 ? 'Habis' : 'Stok: ' + p.stock;
+        var isOut = p.stock <= 0;
+        var stockColor = isOut ? 'var(--red)' : p.stock <= 5 ? 'var(--amber)' : 'var(--green)';
+        var stockBg   = isOut ? '#ffe3e3' : p.stock <= 5 ? '#fff3bf' : '#e6fcf5';
         var div = document.createElement('div');
-        div.className = 'product-card' + (p.stock <= 0 ? ' out-of-stock' : '');
-        div.onclick = function() { addToCart(id); };
-        div.innerHTML = '<div class="pname">' + p.name + '</div>' +
-            '<div class="pprice">Rp ' + p.price.toLocaleString('id-ID') + '</div>' +
-            '<div class="stock-badge ' + stockClass + '">' + stockLabel + '</div>';
-        container.appendChild(div);
+        div.className = 'sdrop-item' + (isOut ? ' disabled' : '');
+        div.innerHTML =
+            '<div><div class="sdrop-name">' + p.name + '</div>' +
+            '<div class="sdrop-price">Rp ' + p.price.toLocaleString('id-ID') + (p.harga_grosir ? ' · Grosir Rp ' + p.harga_grosir.toLocaleString('id-ID') : '') + '</div></div>' +
+            '<span class="sdrop-stock" style="background:' + stockBg + '; color:' + stockColor + '; font-weight:700;">' + (isOut ? 'Habis' : 'Stok ' + p.stock) + '</span>';
+        if (!isOut) div.onclick = function() { addToCart(id); clearSearch(); };
+        dropdown.appendChild(div);
     });
 }
+
+function onSearchEnter(e) {
+    if (e.key !== 'Enter') return;
+    var q = (document.getElementById('search-kasir').value || '').trim().toLowerCase();
+    if (!q) return;
+    var keys = Object.keys(productsData);
+    var match = keys.find(function(id) {
+        var p = productsData[id];
+        return (p.barcode && p.barcode.toLowerCase() === q) || p.name.toLowerCase() === q;
+    });
+    if (match && productsData[match].stock > 0) { addToCart(match); clearSearch(); }
+}
+
+function clearSearch() {
+    document.getElementById('search-kasir').value = '';
+    var dd = document.getElementById('search-dropdown');
+    dd.classList.add('hidden');
+    dd.innerHTML = '';
+}
+
+function renderProductKasir() { /* not used — products shown via search dropdown */ }
 
 function addToCart(id) {
     var p = productsData[id];
@@ -1461,8 +1584,8 @@ function renderCart() {
     var total = 0;
 
     if (cart.length === 0) {
-        container.innerHTML = '<div class="cart-empty"><div class="empty-icon">🛒</div><span>Pilih produk untuk mulai</span></div>';
-        document.getElementById('cart-count').textContent = '0 item';
+        container.innerHTML = '<div class="cart-empty"><div class="empty-icon">🛒</div><span>Scan barcode atau cari produk</span></div>';
+        document.getElementById('cart-count').textContent = '0';
         document.getElementById('total-price').textContent = 'Rp 0';
         document.getElementById('subtotal-price').textContent = 'Rp 0';
         return;
@@ -1491,7 +1614,7 @@ function renderCart() {
         container.appendChild(row);
     });
 
-    document.getElementById('cart-count').textContent = totalItems + ' item';
+    document.getElementById('cart-count').textContent = totalItems;
     document.getElementById('total-price').textContent = 'Rp ' + total.toLocaleString('id-ID');
     document.getElementById('subtotal-price').textContent = 'Rp ' + total.toLocaleString('id-ID');
 }
@@ -1913,7 +2036,6 @@ function handleBarcode(code) {
 productsRef.on('value', function(snapshot) {
     productsData = snapshot.val() || {};
     var role = localStorage.getItem('appRole');
-    if (role === 'kasir') renderProductKasir();
     if (role === 'gudang') renderStockGudang();
 });
 
