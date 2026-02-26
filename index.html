@@ -1031,6 +1031,7 @@
             <div class="panel-topbar">
                 <span class="topbar-title">POS Pro</span>
                 <span class="topbar-tag tag-kasir">KASIR</span>
+                <a href="pelanggan.html" style="padding:6px 12px; background:#eef2ff; color:var(--accent); border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; border:1px solid #c5d0fa;">👥 Pelanggan</a>
                 <button class="exit-btn" onclick="resetRole()">Keluar</button>
             </div>
             <div class="search-bar">
@@ -1057,6 +1058,14 @@
             <div class="cart-header">
                 <h3>Keranjang</h3>
                 <small id="cart-count">0 item</small>
+            </div>
+            <!-- Pilih Pelanggan -->
+            <div style="padding:10px 16px; border-bottom:1px solid var(--border); flex-shrink:0;">
+                <div style="font-size:11px; font-weight:700; color:var(--ink2); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Pelanggan</div>
+                <select id="kasir-pelanggan" onchange="onPelangganChange()" style="width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--ink); background:var(--bg); outline:none;">
+                    <option value="">— Umum (Tanpa Member) —</option>
+                </select>
+                <div id="pelanggan-info-tag" style="margin-top:6px; font-size:12px; color:var(--ink3); min-height:16px;"></div>
             </div>
             <div class="cart-scroll" id="cart-list">
                 <div class="cart-empty">
@@ -1096,8 +1105,18 @@
                     <input type="text" id="new-name" placeholder="Contoh: Kopi Arabika 250g">
                 </div>
                 <div class="form-group">
-                    <label>Harga Jual (Rp)</label>
+                    <label>Harga Jual Eceran (Rp)</label>
                     <input type="number" id="new-price" placeholder="15000">
+                </div>
+                <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <div>
+                        <label style="display:block; font-size:11px; font-weight:700; color:var(--ink2); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">Harga Grosir (Rp)</label>
+                        <input type="number" id="new-harga-grosir" placeholder="12000" style="margin:0;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:11px; font-weight:700; color:var(--ink2); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">Min. Qty Grosir</label>
+                        <input type="number" id="new-min-grosir" placeholder="12" style="margin:0;">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Stok Awal</label>
@@ -1175,8 +1194,18 @@
                 <input type="text" id="edit-name" placeholder="Nama produk">
             </div>
             <div class="form-group">
-                <label>Harga Jual (Rp)</label>
+                <label>Harga Jual Eceran (Rp)</label>
                 <input type="number" id="edit-price" placeholder="Harga">
+            </div>
+            <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <div>
+                    <label style="display:block; font-size:11px; font-weight:700; color:var(--ink2); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">Harga Grosir (Rp)</label>
+                    <input type="number" id="edit-harga-grosir" placeholder="0" style="margin:0;">
+                </div>
+                <div>
+                    <label style="display:block; font-size:11px; font-weight:700; color:var(--ink2); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">Min. Qty Grosir</label>
+                    <input type="number" id="edit-min-grosir" placeholder="0" style="margin:0;">
+                </div>
             </div>
             <div class="form-group">
                 <label>Stok</label>
@@ -1268,6 +1297,7 @@ try {
     firebase.initializeApp(firebaseConfig);
     var db = firebase.database();
     var productsRef = db.ref('products');
+    var pelangganRef = db.ref('pelanggan');
     document.getElementById('conn-status').innerHTML = "✅ Database Terhubung";
     document.getElementById('btn-kasir').onclick = function() { setRole('kasir'); };
     document.getElementById('btn-gudang').onclick = function() { setRole('gudang'); };
@@ -1277,10 +1307,13 @@ try {
 
 // ========== STATE ==========
 var productsData = {};
+var pelangganData = {};
 var cart = [];
 var scannerMode = '';
 var codeReader = null;
 var scannerStream = null;
+var activePelangganId = '';
+var activePelangganTipe = 'umum';
 
 // ========== TOAST ==========
 function showToast(msg, type) {
@@ -1311,6 +1344,59 @@ function resetRole() {
 
 var currentRole = localStorage.getItem('appRole');
 if (currentRole) setRole(currentRole);
+
+// ========== PELANGGAN ==========
+function loadPelangganDropdown() {
+    var sel = document.getElementById('kasir-pelanggan');
+    if (!sel) return;
+    var current = sel.value;
+    sel.innerHTML = '<option value="">— Umum (Tanpa Member) —</option>';
+    var sorted = Object.keys(pelangganData).sort(function(a,b) {
+        return (pelangganData[a].nama||'').localeCompare(pelangganData[b].nama||'');
+    });
+    sorted.forEach(function(id) {
+        var p = pelangganData[id];
+        var icon = p.tipe === 'grosir' ? '📦' : p.tipe === 'member' ? '⭐' : '👤';
+        var opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = icon + ' ' + p.nama + ' (' + (p.tipe || 'umum') + ')';
+        if (p.telepon) opt.textContent += ' · ' + p.telepon;
+        sel.appendChild(opt);
+    });
+    sel.value = current;
+    onPelangganChange();
+}
+
+function onPelangganChange() {
+    var sel = document.getElementById('kasir-pelanggan');
+    activePelangganId = sel ? sel.value : '';
+    var p = activePelangganId ? pelangganData[activePelangganId] : null;
+    activePelangganTipe = p ? (p.tipe || 'umum') : 'umum';
+    var info = document.getElementById('pelanggan-info-tag');
+    if (info) {
+        if (p) {
+            var colors = { grosir: '#f76707', member: '#0ca678', umum: '#228be6' };
+            var icons  = { grosir: '📦 Harga Grosir aktif', member: '⭐ Harga Member', umum: '👤 Harga Eceran' };
+            info.innerHTML = '<span style="color:' + colors[p.tipe||'umum'] + '; font-weight:600;">' + (icons[p.tipe||'umum']||'') + '</span>';
+        } else {
+            info.textContent = '';
+        }
+    }
+    // Re-apply price in cart
+    cart.forEach(function(item) {
+        item.price = getEffectivePrice(item.id, item.qty);
+    });
+    renderCart();
+}
+
+function getEffectivePrice(productId, qty) {
+    var p = productsData[productId];
+    if (!p) return 0;
+    if (activePelangganTipe === 'grosir' && p.harga_grosir && p.min_grosir && qty >= p.min_grosir) {
+        return p.harga_grosir;
+    }
+    return p.price;
+}
 
 // ========== KASIR ==========
 function filterProducts() {
@@ -1358,13 +1444,14 @@ function addToCart(id) {
             break;
         }
     }
-    if (!found) cart.push({ id: id, name: p.name, price: p.price, qty: 1 });
+    if (!found) cart.push({ id: id, name: p.name, price: getEffectivePrice(id, 1), qty: 1, basePrice: p.price, harga_grosir: p.harga_grosir, min_grosir: p.min_grosir });
     renderCart();
 }
 
 function changeQty(index, delta) {
     cart[index].qty += delta;
-    if (cart[index].qty <= 0) cart.splice(index, 1);
+    if (cart[index].qty <= 0) { cart.splice(index, 1); }
+    else { cart[index].price = getEffectivePrice(cart[index].id, cart[index].qty); }
     renderCart();
 }
 
@@ -1386,9 +1473,13 @@ function renderCart() {
         var subtotal = item.price * item.qty;
         total += subtotal;
         totalItems += item.qty;
+        var isGrosir = activePelangganTipe === 'grosir' && item.harga_grosir && item.min_grosir && item.qty >= item.min_grosir;
+        var priceTag = isGrosir
+            ? '<span style="font-size:10px; background:#fff4e6; color:#f76707; padding:1px 6px; border-radius:4px; font-weight:700;">GROSIR</span>'
+            : '';
         var row = document.createElement('div');
         row.className = 'cart-row';
-        row.innerHTML = '<div class="info"><div class="cname">' + item.name + '</div>' +
+        row.innerHTML = '<div class="info"><div class="cname">' + item.name + ' ' + priceTag + '</div>' +
             '<div class="cqty">@Rp ' + item.price.toLocaleString('id-ID') + '</div></div>' +
             '<div class="cright">' +
             '<div class="cprice">Rp ' + subtotal.toLocaleString('id-ID') + '</div>' +
@@ -1408,14 +1499,36 @@ function renderCart() {
 function processPayment() {
     if (cart.length === 0) return showToast('Keranjang kosong!', 'error');
     var updates = {};
+    var total = 0;
+    var items = [];
     for (var i = 0; i < cart.length; i++) {
         var item = cart[i];
         var current = productsData[item.id] ? productsData[item.id].stock : 0;
         if (current < item.qty) { showToast('Stok ' + item.name + ' tidak cukup!', 'error'); return; }
         updates['/products/' + item.id + '/stock'] = current - item.qty;
+        total += item.price * item.qty;
+        items.push({ product_id: item.id, name: item.name, price: item.price, qty: item.qty });
     }
+
+    var now = Date.now();
+    var d = new Date(now);
+    var trx = {
+        items: items,
+        total: total,
+        timestamp: now,
+        tahun: d.getFullYear(),
+        bulan: d.getMonth() + 1,
+        tipe_harga: activePelangganTipe || 'umum'
+    };
+    if (activePelangganId) {
+        trx.pelanggan_id = activePelangganId;
+        trx.pelanggan_nama = pelangganData[activePelangganId] ? pelangganData[activePelangganId].nama : '';
+    }
+
     db.ref().update(updates).then(function() {
-        showToast('✅ Pembayaran berhasil!', 'success');
+        return db.ref('transaksi').push(trx);
+    }).then(function() {
+        showToast('✅ Pembayaran berhasil! Total Rp ' + total.toLocaleString('id-ID'), 'success');
         cart = [];
         renderCart();
     }).catch(function(e) {
@@ -1457,9 +1570,13 @@ function addProduct() {
     var price = parseInt(document.getElementById('new-price').value);
     var stock = parseInt(document.getElementById('new-stock').value);
     var barcode = document.getElementById('new-barcode').value.trim();
+    var harga_grosir = parseInt(document.getElementById('new-harga-grosir').value) || 0;
+    var min_grosir = parseInt(document.getElementById('new-min-grosir').value) || 0;
     if (!name || isNaN(price) || isNaN(stock)) { showToast('Lengkapi semua data!', 'error'); return; }
     var data = { name: name, price: price, stock: stock };
     if (barcode) data.barcode = barcode;
+    if (harga_grosir > 0) data.harga_grosir = harga_grosir;
+    if (min_grosir > 0) data.min_grosir = min_grosir;
     if (newImageData) data.image = newImageData;
     productsRef.push(data).then(function() {
         showToast('✅ Produk berhasil ditambahkan!', 'success');
@@ -1467,6 +1584,8 @@ function addProduct() {
         document.getElementById('new-price').value = '';
         document.getElementById('new-stock').value = '';
         document.getElementById('new-barcode').value = '';
+        document.getElementById('new-harga-grosir').value = '';
+        document.getElementById('new-min-grosir').value = '';
         document.getElementById('new-image').value = '';
         document.getElementById('img-preview-thumb').style.display = 'none';
         document.getElementById('img-upload-placeholder').style.display = 'block';
@@ -1523,7 +1642,7 @@ function renderStockGudang() {
 
         tr.innerHTML =
             '<td class="td-img">' + imgHtml + '</td>' +
-            '<td class="td-name">' + p.name + '</td>' +
+            '<td class="td-name">' + p.name + (p.harga_grosir ? '<br><span style="font-size:10px; color:var(--amber); font-family:DM Mono,monospace; font-weight:600;">Grosir: Rp ' + p.harga_grosir.toLocaleString('id-ID') + ' (min.' + (p.min_grosir||0) + ')</span>' : '') + '</td>' +
             '<td class="td-price">Rp ' + p.price.toLocaleString('id-ID') + '</td>' +
             '<td>' + bcHtml + '</td>' +
             '<td><div class="td-stock-ctrl">' +
@@ -1560,6 +1679,8 @@ function openEditModal(id) {
     document.getElementById('edit-id').value = id;
     document.getElementById('edit-name').value = p.name;
     document.getElementById('edit-price').value = p.price;
+    document.getElementById('edit-harga-grosir').value = p.harga_grosir || '';
+    document.getElementById('edit-min-grosir').value = p.min_grosir || '';
     document.getElementById('edit-stock').value = p.stock;
     document.getElementById('edit-barcode').value = p.barcode || '';
     editImageData = p.image || null;
@@ -1614,6 +1735,10 @@ function saveEdit() {
     if (!name || isNaN(price) || isNaN(stock)) { showToast('Lengkapi semua data!', 'error'); return; }
     var data = { name: name, price: price, stock: stock };
     if (barcode) data.barcode = barcode; else data.barcode = null;
+    var hg = parseInt(document.getElementById('edit-harga-grosir').value) || 0;
+    var mg = parseInt(document.getElementById('edit-min-grosir').value) || 0;
+    data.harga_grosir = hg > 0 ? hg : null;
+    data.min_grosir = mg > 0 ? mg : null;
     if (editImageData) data.image = editImageData; else data.image = null;
     productsRef.child(id).update(data).then(function() {
         showToast('✅ Produk diperbarui!', 'success');
@@ -1790,6 +1915,11 @@ productsRef.on('value', function(snapshot) {
     var role = localStorage.getItem('appRole');
     if (role === 'kasir') renderProductKasir();
     if (role === 'gudang') renderStockGudang();
+});
+
+pelangganRef.on('value', function(snapshot) {
+    pelangganData = snapshot.val() || {};
+    loadPelangganDropdown();
 });
 </script>
 </body>
