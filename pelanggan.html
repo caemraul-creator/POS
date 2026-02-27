@@ -1039,7 +1039,7 @@ function printTransaksi(id) {
     setTimeout(function() { win.print(); }, 400);
 }
 
-
+function changeYear(id, year) {
     selectedYear = parseInt(year);
     if (id === '__umum__') showDetailUmum();
     else showDetail(id);
