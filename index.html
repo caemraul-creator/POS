@@ -1475,27 +1475,56 @@ function onPelangganChange() {
     var info = document.getElementById('pelanggan-info-tag');
     if (info) {
         if (p) {
-            var colors = { grosir: '#f76707', member: '#0ca678', umum: '#228be6' };
-            var icons  = { grosir: '📦 Harga Grosir aktif', member: '⭐ Harga Member', umum: '👤 Harga Eceran' };
-            info.innerHTML = '<span style="color:' + colors[p.tipe||'umum'] + '; font-weight:600;">' + (icons[p.tipe||'umum']||'') + '</span>';
+            var colors = { member: '#0ca678', umum: '#228be6' };
+            var icons  = { member: '⭐ Harga Member', umum: '👤 Harga Eceran' };
+            info.innerHTML = '<span style="color:' + (colors[p.tipe||'umum']||'#228be6') + '; font-weight:600;">' + (icons[p.tipe||'umum']||'👤 Harga Eceran') + '</span>';
         } else {
             info.textContent = '';
         }
     }
-    // Re-apply price in cart
-    cart.forEach(function(item) {
-        item.price = getEffectivePrice(item.id, item.qty);
-    });
+    // Re-render cart with new pelanggan context
     renderCart();
 }
 
-function getEffectivePrice(productId, qty) {
+// ========== SPLIT PRICE ENGINE ==========
+// Contoh: min_grosir=10, harga_grosir=12rb, harga_normal=15rb
+//   beli 8  → 8 x 15rb = 120rb
+//   beli 10 → 10 x 12rb = 120rb
+//   beli 12 → (10 x 12rb) + (2 x 15rb) = 120rb + 30rb = 150rb
+function calcSplitPrice(productId, qty) {
     var p = productsData[productId];
-    if (!p) return 0;
-    if (activePelangganTipe === 'grosir' && p.harga_grosir && p.min_grosir && qty >= p.min_grosir) {
-        return p.harga_grosir;
+    if (!p) return { total: 0, grosirQty: 0, normalQty: qty, grosirPrice: 0, normalPrice: 0, hasSplit: false };
+
+    var hasGrosir = p.harga_grosir && p.min_grosir && p.min_grosir > 0;
+
+    if (!hasGrosir || qty < p.min_grosir) {
+        // Semua harga normal
+        return {
+            total:      p.price * qty,
+            grosirQty:  0,
+            normalQty:  qty,
+            grosirPrice: p.harga_grosir || 0,
+            normalPrice: p.price,
+            hasSplit:   false,
+            nearGrosir: hasGrosir && qty < p.min_grosir,
+            sisaQty:    hasGrosir ? p.min_grosir - qty : 0
+        };
     }
-    return p.price;
+
+    var grosirQty = p.min_grosir;          // tepat sejumlah minimum = harga grosir
+    var normalQty = qty - grosirQty;        // sisanya = harga normal
+
+    return {
+        total:       (grosirQty * p.harga_grosir) + (normalQty * p.price),
+        grosirQty:   grosirQty,
+        normalQty:   normalQty,
+        grosirPrice: p.harga_grosir,
+        normalPrice: p.price,
+        hasSplit:    normalQty > 0,          // ada dua tier harga
+        isFullGrosir: normalQty === 0,       // pas di minimum, semua grosir
+        nearGrosir:  false,
+        sisaQty:     0
+    };
 }
 
 // ========== KASIR ==========
@@ -1567,14 +1596,13 @@ function addToCart(id) {
             break;
         }
     }
-    if (!found) cart.push({ id: id, name: p.name, price: getEffectivePrice(id, 1), qty: 1, basePrice: p.price, harga_grosir: p.harga_grosir, min_grosir: p.min_grosir });
+    if (!found) cart.push({ id: id, name: p.name, qty: 1, basePrice: p.price, harga_grosir: p.harga_grosir || 0, min_grosir: p.min_grosir || 0 });
     renderCart();
 }
 
 function changeQty(index, delta) {
     cart[index].qty += delta;
     if (cart[index].qty <= 0) { cart.splice(index, 1); }
-    else { cart[index].price = getEffectivePrice(cart[index].id, cart[index].qty); }
     renderCart();
 }
 
@@ -1593,24 +1621,48 @@ function renderCart() {
 
     var totalItems = 0;
     cart.forEach(function(item, i) {
-        var subtotal = item.price * item.qty;
-        total += subtotal;
+        var sp = calcSplitPrice(item.id, item.qty);
+        total += sp.total;
         totalItems += item.qty;
-        var isGrosir = activePelangganTipe === 'grosir' && item.harga_grosir && item.min_grosir && item.qty >= item.min_grosir;
-        var priceTag = isGrosir
-            ? '<span style="font-size:10px; background:#fff4e6; color:#f76707; padding:1px 6px; border-radius:4px; font-weight:700;">GROSIR</span>'
-            : '';
+
+        // --- Badge & info baris harga ---
+        var badge = '';
+        var priceDetail = '';
+
+        if (sp.hasSplit) {
+            // Contoh: 10 × Rp12.000 + 2 × Rp15.000
+            badge = '<span style="font-size:10px; background:#fff4e6; color:#f76707; padding:1px 6px; border-radius:4px; font-weight:700; margin-left:4px;">SPLIT</span>';
+            priceDetail =
+                '<div style="font-size:11px; color:var(--ink3); margin-top:3px; line-height:1.6;">' +
+                '<span style="color:#f76707; font-weight:600;">' + sp.grosirQty + ' × Rp ' + sp.grosirPrice.toLocaleString('id-ID') + '</span>' +
+                ' <span style="color:var(--ink3);">+</span> ' +
+                '<span>' + sp.normalQty + ' × Rp ' + sp.normalPrice.toLocaleString('id-ID') + '</span>' +
+                '</div>';
+        } else if (sp.isFullGrosir || (!sp.hasSplit && sp.grosirQty > 0)) {
+            badge = '<span style="font-size:10px; background:#fff4e6; color:#f76707; padding:1px 6px; border-radius:4px; font-weight:700; margin-left:4px;">GROSIR</span>';
+            priceDetail = '<div style="font-size:11px; color:var(--ink3); margin-top:2px;">@Rp ' + sp.grosirPrice.toLocaleString('id-ID') + ' <s style="color:#ccc;">Rp ' + sp.normalPrice.toLocaleString('id-ID') + '</s></div>';
+        } else if (sp.nearGrosir) {
+            badge = '<span style="font-size:10px; background:#f1f3f5; color:#8891a5; padding:1px 6px; border-radius:4px; font-weight:600; margin-left:4px;">+' + sp.sisaQty + ' → grosir</span>';
+            priceDetail = '<div style="font-size:11px; color:var(--ink3); margin-top:2px;">@Rp ' + sp.normalPrice.toLocaleString('id-ID') + '</div>';
+        } else {
+            priceDetail = '<div style="font-size:11px; color:var(--ink3); margin-top:2px;">@Rp ' + sp.normalPrice.toLocaleString('id-ID') + '</div>';
+        }
+
         var row = document.createElement('div');
         row.className = 'cart-row';
-        row.innerHTML = '<div class="info"><div class="cname">' + item.name + ' ' + priceTag + '</div>' +
-            '<div class="cqty">@Rp ' + item.price.toLocaleString('id-ID') + '</div></div>' +
+        row.innerHTML =
+            '<div class="info">' +
+              '<div class="cname">' + item.name + badge + '</div>' +
+              priceDetail +
+            '</div>' +
             '<div class="cright">' +
-            '<div class="cprice">Rp ' + subtotal.toLocaleString('id-ID') + '</div>' +
-            '<div class="qty-ctrl">' +
-            '<button class="qty-btn minus" onclick="changeQty(' + i + ', -1)">−</button>' +
-            '<span class="qty-num">' + item.qty + '</span>' +
-            '<button class="qty-btn" onclick="changeQty(' + i + ', 1)">+</button>' +
-            '</div></div>';
+              '<div class="cprice">Rp ' + sp.total.toLocaleString('id-ID') + '</div>' +
+              '<div class="qty-ctrl">' +
+                '<button class="qty-btn minus" onclick="changeQty(' + i + ', -1)">−</button>' +
+                '<span class="qty-num">' + item.qty + '</span>' +
+                '<button class="qty-btn" onclick="changeQty(' + i + ', 1)">+</button>' +
+              '</div>' +
+            '</div>';
         container.appendChild(row);
     });
 
@@ -1629,8 +1681,19 @@ function processPayment() {
         var current = productsData[item.id] ? productsData[item.id].stock : 0;
         if (current < item.qty) { showToast('Stok ' + item.name + ' tidak cukup!', 'error'); return; }
         updates['/products/' + item.id + '/stock'] = current - item.qty;
-        total += item.price * item.qty;
-        items.push({ product_id: item.id, name: item.name, price: item.price, qty: item.qty });
+
+        var sp = calcSplitPrice(item.id, item.qty);
+        total += sp.total;
+        items.push({
+            product_id: item.id,
+            name:       item.name,
+            qty:        item.qty,
+            subtotal:   sp.total,
+            grosir_qty: sp.grosirQty,
+            normal_qty: sp.normalQty,
+            harga_grosir: sp.grosirPrice,
+            harga_normal: sp.normalPrice
+        });
     }
 
     var now = Date.now();
@@ -1644,7 +1707,7 @@ function processPayment() {
         tipe_harga: activePelangganTipe || 'umum'
     };
     if (activePelangganId) {
-        trx.pelanggan_id = activePelangganId;
+        trx.pelanggan_id   = activePelangganId;
         trx.pelanggan_nama = pelangganData[activePelangganId] ? pelangganData[activePelangganId].nama : '';
     }
 

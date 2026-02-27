@@ -126,7 +126,6 @@
         }
         .av-umum { background: linear-gradient(135deg, #74c0fc, #228be6); }
         .av-member { background: linear-gradient(135deg, #63e6be, #0ca678); }
-        .av-grosir { background: linear-gradient(135deg, #ffa94d, #f76707); }
 
         .item-info { flex: 1; min-width: 0; }
         .item-name { font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -361,7 +360,7 @@
         }
         .form-group input:focus, .form-group select:focus { border-color: var(--accent2); background: #fff; }
 
-        .type-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .type-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .type-opt {
             padding: 10px 6px; border-radius: 10px; border: 2px solid var(--border);
             background: var(--bg); cursor: pointer; text-align: center;
@@ -370,7 +369,6 @@
         .type-opt .toi { font-size: 20px; display: block; margin-bottom: 4px; }
         .type-opt.sel-umum { border-color: #228be6; background: #e7f5ff; color: #228be6; }
         .type-opt.sel-member { border-color: #0ca678; background: #e6fcf5; color: #0ca678; }
-        .type-opt.sel-grosir { border-color: #f76707; background: #fff4e6; color: #f76707; }
 
         .modal-footer { display: flex; gap: 10px; padding: 16px 20px; border-top: 1px solid var(--border); }
         .btn-cancel { flex: 1; padding: 11px; border-radius: 9px; border: 1.5px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--ink2); }
@@ -425,7 +423,6 @@
                 <div class="ftab active" data-f="semua" onclick="setFilter('semua')">Semua</div>
                 <div class="ftab" data-f="umum" onclick="setFilter('umum')">Umum</div>
                 <div class="ftab" data-f="member" onclick="setFilter('member')">Member</div>
-                <div class="ftab" data-f="grosir" onclick="setFilter('grosir')">Grosir</div>
             </div>
         </div>
         <div class="pelanggan-scroll" id="pelanggan-list"></div>
@@ -472,9 +469,6 @@
                     </div>
                     <div class="type-opt" id="opt-member" onclick="selectType('member')">
                         <span class="toi">⭐</span>Member
-                    </div>
-                    <div class="type-opt" id="opt-grosir" onclick="selectType('grosir')">
-                        <span class="toi">📦</span>Grosir
                     </div>
                 </div>
             </div>
@@ -697,7 +691,7 @@ function showDetail(id) {
             var mon = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][d.getMonth()];
             var itemsLabel = (t.items || []).slice(0,2).map(function(x) { return x.name + ' x' + x.qty; }).join(', ');
             if ((t.items || []).length > 2) itemsLabel += ' +' + ((t.items||[]).length - 2) + ' lagi';
-            var tBadge = t.tipe_harga === 'grosir' ? '<span class="trx-type-badge trx-grosir">Grosir</span>' : (t.tipe_harga === 'member' ? '<span class="trx-type-badge trx-eceran">Member</span>' : '<span class="trx-type-badge trx-umum">Eceran</span>');
+            var tBadge = t.tipe_harga === 'member' ? '<span class="trx-type-badge trx-eceran">Member</span>' : '<span class="trx-type-badge trx-umum">Eceran</span>';
             trxHtml +=
                 '<div class="trx-card">' +
                 '<div class="trx-date-box"><div class="day">' + day + '</div><div class="mon">' + mon + '</div></div>' +
@@ -787,7 +781,7 @@ function closeModal() {
 
 function selectType(type) {
     selectedType = type;
-    ['umum', 'member', 'grosir'].forEach(function(t) {
+    ['umum', 'member'].forEach(function(t) {
         var el = document.getElementById('opt-' + t);
         el.className = 'type-opt' + (t === type ? ' sel-' + t : '');
     });
