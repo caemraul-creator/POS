@@ -1490,7 +1490,8 @@ function onPelangganChange() {
 // Contoh: min_grosir=10, harga_grosir=12rb, harga_normal=15rb
 //   beli 8  → 8 x 15rb = 120rb
 //   beli 10 → 10 x 12rb = 120rb
-//   beli 12 → (10 x 12rb) + (2 x 15rb) = 120rb + 30rb = 150rb
+//   beli 12 → (10 x 12rb) + (2 x 15rb) = 150rb
+//   beli 22 → (20 x 12rb) + (2 x 15rb) = 270rb  ← kelipatan grosir ikut grosir
 function calcSplitPrice(productId, qty) {
     var p = productsData[productId];
     if (!p) return { total: 0, grosirQty: 0, normalQty: qty, grosirPrice: 0, normalPrice: 0, hasSplit: false };
@@ -1498,7 +1499,6 @@ function calcSplitPrice(productId, qty) {
     var hasGrosir = p.harga_grosir && p.min_grosir && p.min_grosir > 0;
 
     if (!hasGrosir || qty < p.min_grosir) {
-        // Semua harga normal
         return {
             total:      p.price * qty,
             grosirQty:  0,
@@ -1511,19 +1511,21 @@ function calcSplitPrice(productId, qty) {
         };
     }
 
-    var grosirQty = p.min_grosir;          // tepat sejumlah minimum = harga grosir
-    var normalQty = qty - grosirQty;        // sisanya = harga normal
+    // Berapa kelipatan penuh dari min_grosir → semua dapat harga grosir
+    var batchCount = Math.floor(qty / p.min_grosir);
+    var grosirQty  = batchCount * p.min_grosir;
+    var normalQty  = qty - grosirQty;
 
     return {
-        total:       (grosirQty * p.harga_grosir) + (normalQty * p.price),
-        grosirQty:   grosirQty,
-        normalQty:   normalQty,
-        grosirPrice: p.harga_grosir,
-        normalPrice: p.price,
-        hasSplit:    normalQty > 0,          // ada dua tier harga
-        isFullGrosir: normalQty === 0,       // pas di minimum, semua grosir
-        nearGrosir:  false,
-        sisaQty:     0
+        total:        (grosirQty * p.harga_grosir) + (normalQty * p.price),
+        grosirQty:    grosirQty,
+        normalQty:    normalQty,
+        grosirPrice:  p.harga_grosir,
+        normalPrice:  p.price,
+        hasSplit:     normalQty > 0,
+        isFullGrosir: normalQty === 0,
+        nearGrosir:   false,
+        sisaQty:      0
     };
 }
 
@@ -1626,7 +1628,12 @@ function renderCart() {
         totalItems += item.qty;
 
         if (sp.hasSplit) {
-            // ── Baris 1: bagian GROSIR (sejumlah min_grosir) ──
+            // ── Baris 1: bagian GROSIR (kelipatan min_grosir) ──
+            var p = productsData[item.id];
+            var batchCount = p && p.min_grosir ? Math.floor(item.qty / p.min_grosir) : 1;
+            var batchLabel = batchCount > 1
+                ? batchCount + ' × ' + p.min_grosir + ' = ' + sp.grosirQty
+                : sp.grosirQty;
             var subtotalGrosir = sp.grosirQty * sp.grosirPrice;
             var rowGrosir = document.createElement('div');
             rowGrosir.className = 'cart-row';
@@ -1641,7 +1648,7 @@ function renderCart() {
                   '<div class="cprice">Rp ' + subtotalGrosir.toLocaleString('id-ID') + '</div>' +
                   '<div class="qty-ctrl">' +
                     '<button class="qty-btn minus" onclick="changeQty(' + i + ', -1)" style="opacity:0.35;pointer-events:none;">−</button>' +
-                    '<span class="qty-num">' + sp.grosirQty + '</span>' +
+                    '<span class="qty-num">' + batchLabel + '</span>' +
                     '<button class="qty-btn" onclick="changeQty(' + i + ', 1)" style="opacity:0.35;pointer-events:none;">+</button>' +
                   '</div>' +
                 '</div>';

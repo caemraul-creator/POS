@@ -723,8 +723,8 @@ function showDetailUmum() {
         '</div>' +
 
         '<div class="stats-row">' +
-          '<div class="stat-card"><div class="stat-label">Total Belanja ' + selectedYear + '</div><div class="stat-value">Rp ' + Math.round(yearlyTotal/1000).toLocaleString('id-ID') + 'K</div><div class="stat-sub">Tahun ini</div></div>' +
-          '<div class="stat-card"><div class="stat-label">Semua Waktu</div><div class="stat-value">Rp ' + Math.round(allTimeTotal/1000).toLocaleString('id-ID') + 'K</div><div class="stat-sub">Total belanja</div></div>' +
+          '<div class="stat-card"><div class="stat-label">Total Belanja ' + selectedYear + '</div><div class="stat-value">Rp ' + yearlyTotal.toLocaleString('id-ID') + '</div><div class="stat-sub">Tahun ini</div></div>' +
+          '<div class="stat-card"><div class="stat-label">Semua Waktu</div><div class="stat-value">Rp ' + allTimeTotal.toLocaleString('id-ID') + '</div><div class="stat-sub">Total belanja</div></div>' +
           '<div class="stat-card"><div class="stat-label">Transaksi</div><div class="stat-value">' + umumKeys.length + 'x</div><div class="stat-sub">Semua transaksi umum</div></div>' +
           '<div class="stat-card"><div class="stat-label">Tahun Ini</div><div class="stat-value">' + trxKeys.length + 'x</div><div class="stat-sub">Transaksi ' + selectedYear + '</div></div>' +
         '</div>' +
@@ -857,8 +857,8 @@ function showDetail(id) {
         '</div>' +
 
         '<div class="stats-row">' +
-          '<div class="stat-card"><div class="stat-label">Total Belanja ' + selectedYear + '</div><div class="stat-value">Rp ' + Math.round(yearlyTotal/1000).toLocaleString('id-ID') + 'K</div><div class="stat-sub">Tahun ini</div></div>' +
-          '<div class="stat-card"><div class="stat-label">Semua Waktu</div><div class="stat-value">Rp ' + Math.round(allTimeTotal/1000).toLocaleString('id-ID') + 'K</div><div class="stat-sub">Total belanja</div></div>' +
+          '<div class="stat-card"><div class="stat-label">Total Belanja ' + selectedYear + '</div><div class="stat-value">Rp ' + yearlyTotal.toLocaleString('id-ID') + '</div><div class="stat-sub">Tahun ini</div></div>' +
+          '<div class="stat-card"><div class="stat-label">Semua Waktu</div><div class="stat-value">Rp ' + allTimeTotal.toLocaleString('id-ID') + '</div><div class="stat-sub">Total belanja</div></div>' +
           '<div class="stat-card"><div class="stat-label">Transaksi</div><div class="stat-value">' + countTrx + 'x</div><div class="stat-sub">Semua transaksi</div></div>' +
           '<div class="stat-card"><div class="stat-label">Tier Bonus</div><div class="stat-value"><span class="tier-badge tier-' + tier + '" style="font-size:13px;">' + (tier === 'none' ? '—' : tierLabel(tier)) + '</span></div><div class="stat-sub">Berdasarkan ' + selectedYear + '</div></div>' +
         '</div>' +
