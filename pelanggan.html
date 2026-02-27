@@ -564,11 +564,56 @@ function countTransaksi(pid) {
     return count;
 }
 
+// Transaksi umum = tidak punya pelanggan_id
+function getUmumTransaksi() {
+    return Object.keys(transaksiData).filter(function(tid) {
+        var t = transaksiData[tid];
+        return !t.pelanggan_id || t.pelanggan_id === '';
+    });
+}
+
+function getUmumYearlyTotal(year) {
+    var total = 0;
+    getUmumTransaksi().forEach(function(tid) {
+        var t = transaksiData[tid];
+        if (t.tahun === year) total += (t.total || 0);
+    });
+    return total;
+}
+
 // ===== RENDER LIST =====
 function renderList() {
     var q = (document.getElementById('search-p').value || '').toLowerCase();
     var container = document.getElementById('pelanggan-list');
     container.innerHTML = '';
+
+    // --- Entri virtual "Pelanggan Umum" ---
+    if (filterType === 'semua' || filterType === 'umum') {
+        var umumCount = getUmumTransaksi().length;
+        var umumYearly = getUmumYearlyTotal(new Date().getFullYear());
+        var matchUmum = 'pelanggan umum'.includes(q) || 'umum'.includes(q) || q === '';
+        if (matchUmum) {
+            var umumDiv = document.createElement('div');
+            umumDiv.className = 'pelanggan-item' + (activeId === '__umum__' ? ' active' : '');
+            umumDiv.onclick = function() { showDetailUmum(); };
+            umumDiv.innerHTML =
+                '<div class="avatar" style="background:linear-gradient(135deg,#adb5bd,#6c757d); font-size:20px;">👤</div>' +
+                '<div class="item-info">' +
+                  '<div class="item-name">Pelanggan Umum</div>' +
+                  '<div class="item-meta">Tanpa member · ' + umumCount + ' transaksi</div>' +
+                '</div>' +
+                '<div class="item-right">' +
+                  '<div class="tier-badge tier-none">Umum</div>' +
+                  '<div class="item-total">Rp ' + umumYearly.toLocaleString('id-ID') + '/thn</div>' +
+                '</div>';
+            container.appendChild(umumDiv);
+
+            // Divider
+            var div = document.createElement('div');
+            div.style.cssText = 'height:1px; background:var(--border); margin:0 16px;';
+            container.appendChild(div);
+        }
+    }
 
     var keys = Object.keys(pelangganData).sort(function(a, b) {
         return (pelangganData[a].nama || '').localeCompare(pelangganData[b].nama || '');
@@ -581,8 +626,8 @@ function renderList() {
         return matchQ && matchF;
     });
 
-    if (filtered.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:40px 20px; color:var(--ink3); font-size:13px;">Tidak ada pelanggan</div>';
+    if (filtered.length === 0 && filterType !== 'semua' && filterType !== 'umum') {
+        container.innerHTML += '<div style="text-align:center; padding:40px 20px; color:var(--ink3); font-size:13px;">Tidak ada pelanggan</div>';
         return;
     }
 
@@ -610,7 +655,85 @@ function renderList() {
     });
 }
 
-// ===== SHOW DETAIL =====
+// ===== SHOW DETAIL UMUM (transaksi tanpa member) =====
+function showDetailUmum() {
+    activeId = '__umum__';
+    renderList();
+
+    var umumKeys = getUmumTransaksi();
+    var allTimeTotal = 0;
+    umumKeys.forEach(function(tid) { allTimeTotal += (transaksiData[tid].total || 0); });
+    var yearlyTotal = getUmumYearlyTotal(selectedYear);
+
+    // Build year options
+    var years = new Set([new Date().getFullYear()]);
+    umumKeys.forEach(function(tid) { years.add(transaksiData[tid].tahun); });
+    var yearOpts = Array.from(years).sort(function(a,b){return b-a;}).map(function(y) {
+        return '<option value="' + y + '"' + (y === selectedYear ? ' selected' : '') + '>' + y + '</option>';
+    }).join('');
+
+    // Filter by year
+    var trxKeys = umumKeys.filter(function(tid) {
+        return transaksiData[tid].tahun === selectedYear;
+    }).sort(function(a, b) {
+        return (transaksiData[b].timestamp||0) - (transaksiData[a].timestamp||0);
+    });
+
+    var trxHtml = '';
+    if (trxKeys.length === 0) {
+        trxHtml = '<div class="empty-trx">📭 Belum ada transaksi umum di tahun ' + selectedYear + '</div>';
+    } else {
+        trxKeys.forEach(function(tid) {
+            var t = transaksiData[tid];
+            var d = new Date(t.timestamp || Date.now());
+            var day = d.getDate().toString().padStart(2,'0');
+            var mon = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][d.getMonth()];
+            var itemsLabel = (t.items||[]).slice(0,2).map(function(x){return x.name+' x'+x.qty;}).join(', ');
+            if ((t.items||[]).length > 2) itemsLabel += ' +' + ((t.items||[]).length - 2) + ' lagi';
+            trxHtml +=
+                '<div class="trx-card">' +
+                '<div class="trx-date-box"><div class="day">'+day+'</div><div class="mon">'+mon+'</div></div>' +
+                '<div class="trx-info">' +
+                  '<div class="trx-id">#'+tid.slice(-6).toUpperCase()+' · <span class="trx-type-badge trx-umum">Umum</span></div>' +
+                  '<div class="trx-items">'+(itemsLabel||'—')+'</div>' +
+                '</div>' +
+                '<div class="trx-total">Rp '+(t.total||0).toLocaleString('id-ID')+'</div>' +
+                '</div>';
+        });
+    }
+
+    var html =
+        '<div class="profile-card">' +
+          '<div class="profile-avatar" style="background:linear-gradient(135deg,#adb5bd,#6c757d); font-size:28px;">👤</div>' +
+          '<div class="profile-info">' +
+            '<div class="profile-name">Pelanggan Umum</div>' +
+            '<div class="profile-phone">Transaksi tanpa data member</div>' +
+            '<div class="profile-tags"><span class="type-badge type-umum">Umum</span></div>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="stats-row">' +
+          '<div class="stat-card"><div class="stat-label">Total Belanja ' + selectedYear + '</div><div class="stat-value">Rp ' + Math.round(yearlyTotal/1000).toLocaleString('id-ID') + 'K</div><div class="stat-sub">Tahun ini</div></div>' +
+          '<div class="stat-card"><div class="stat-label">Semua Waktu</div><div class="stat-value">Rp ' + Math.round(allTimeTotal/1000).toLocaleString('id-ID') + 'K</div><div class="stat-sub">Total belanja</div></div>' +
+          '<div class="stat-card"><div class="stat-label">Transaksi</div><div class="stat-value">' + umumKeys.length + 'x</div><div class="stat-sub">Semua transaksi umum</div></div>' +
+          '<div class="stat-card"><div class="stat-label">Tahun Ini</div><div class="stat-value">' + trxKeys.length + 'x</div><div class="stat-sub">Transaksi ' + selectedYear + '</div></div>' +
+        '</div>' +
+
+        '<div class="section-title">' +
+          '<span>📋 Riwayat Transaksi Umum</span>' +
+          '<select class="year-select" onchange="changeYearUmum(this.value)">' + yearOpts + '</select>' +
+        '</div>' +
+        '<div class="trx-list">' + trxHtml + '</div>';
+
+    document.getElementById('detail-panel').innerHTML = html;
+}
+
+function changeYearUmum(year) {
+    selectedYear = parseInt(year);
+    showDetailUmum();
+}
+
+// ===== SHOW DETAIL (member/umum terdaftar) =====
 function showDetail(id) {
     activeId = id;
     renderList();
@@ -747,7 +870,8 @@ function showDetail(id) {
 
 function changeYear(id, year) {
     selectedYear = parseInt(year);
-    showDetail(id);
+    if (id === '__umum__') showDetailUmum();
+    else showDetail(id);
 }
 
 // ===== MODAL =====
