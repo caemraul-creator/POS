@@ -1625,45 +1625,94 @@ function renderCart() {
         total += sp.total;
         totalItems += item.qty;
 
-        // --- Badge & info baris harga ---
-        var badge = '';
-        var priceDetail = '';
-
         if (sp.hasSplit) {
-            // Contoh: 10 × Rp12.000 + 2 × Rp15.000
-            badge = '<span style="font-size:10px; background:#fff4e6; color:#f76707; padding:1px 6px; border-radius:4px; font-weight:700; margin-left:4px;">SPLIT</span>';
-            priceDetail =
-                '<div style="font-size:11px; color:var(--ink3); margin-top:3px; line-height:1.6;">' +
-                '<span style="color:#f76707; font-weight:600;">' + sp.grosirQty + ' × Rp ' + sp.grosirPrice.toLocaleString('id-ID') + '</span>' +
-                ' <span style="color:var(--ink3);">+</span> ' +
-                '<span>' + sp.normalQty + ' × Rp ' + sp.normalPrice.toLocaleString('id-ID') + '</span>' +
+            // ── Baris 1: bagian GROSIR (sejumlah min_grosir) ──
+            var subtotalGrosir = sp.grosirQty * sp.grosirPrice;
+            var rowGrosir = document.createElement('div');
+            rowGrosir.className = 'cart-row';
+            rowGrosir.innerHTML =
+                '<div class="info">' +
+                  '<div class="cname">' + item.name +
+                    ' <span style="font-size:10px;background:#fff4e6;color:#f76707;padding:1px 6px;border-radius:4px;font-weight:700;margin-left:4px;">GROSIR</span>' +
+                  '</div>' +
+                  '<div style="font-size:11px;color:var(--ink3);margin-top:2px;">@Rp ' + sp.grosirPrice.toLocaleString('id-ID') + ' <s style="color:#ccc;">Rp ' + sp.normalPrice.toLocaleString('id-ID') + '</s></div>' +
+                '</div>' +
+                '<div class="cright">' +
+                  '<div class="cprice">Rp ' + subtotalGrosir.toLocaleString('id-ID') + '</div>' +
+                  '<div class="qty-ctrl">' +
+                    '<button class="qty-btn minus" onclick="changeQty(' + i + ', -1)" style="opacity:0.35;pointer-events:none;">−</button>' +
+                    '<span class="qty-num">' + sp.grosirQty + '</span>' +
+                    '<button class="qty-btn" onclick="changeQty(' + i + ', 1)" style="opacity:0.35;pointer-events:none;">+</button>' +
+                  '</div>' +
                 '</div>';
-        } else if (sp.isFullGrosir || (!sp.hasSplit && sp.grosirQty > 0)) {
-            badge = '<span style="font-size:10px; background:#fff4e6; color:#f76707; padding:1px 6px; border-radius:4px; font-weight:700; margin-left:4px;">GROSIR</span>';
-            priceDetail = '<div style="font-size:11px; color:var(--ink3); margin-top:2px;">@Rp ' + sp.grosirPrice.toLocaleString('id-ID') + ' <s style="color:#ccc;">Rp ' + sp.normalPrice.toLocaleString('id-ID') + '</s></div>';
-        } else if (sp.nearGrosir) {
-            badge = '<span style="font-size:10px; background:#f1f3f5; color:#8891a5; padding:1px 6px; border-radius:4px; font-weight:600; margin-left:4px;">+' + sp.sisaQty + ' → grosir</span>';
-            priceDetail = '<div style="font-size:11px; color:var(--ink3); margin-top:2px;">@Rp ' + sp.normalPrice.toLocaleString('id-ID') + '</div>';
-        } else {
-            priceDetail = '<div style="font-size:11px; color:var(--ink3); margin-top:2px;">@Rp ' + sp.normalPrice.toLocaleString('id-ID') + '</div>';
-        }
+            container.appendChild(rowGrosir);
 
-        var row = document.createElement('div');
-        row.className = 'cart-row';
-        row.innerHTML =
-            '<div class="info">' +
-              '<div class="cname">' + item.name + badge + '</div>' +
-              priceDetail +
-            '</div>' +
-            '<div class="cright">' +
-              '<div class="cprice">Rp ' + sp.total.toLocaleString('id-ID') + '</div>' +
-              '<div class="qty-ctrl">' +
-                '<button class="qty-btn minus" onclick="changeQty(' + i + ', -1)">−</button>' +
-                '<span class="qty-num">' + item.qty + '</span>' +
-                '<button class="qty-btn" onclick="changeQty(' + i + ', 1)">+</button>' +
-              '</div>' +
-            '</div>';
-        container.appendChild(row);
+            // ── Baris 2: sisa NORMAL ──
+            var subtotalNormal = sp.normalQty * sp.normalPrice;
+            var rowNormal = document.createElement('div');
+            rowNormal.className = 'cart-row';
+            rowNormal.style.cssText = 'background:#f8f9fc; border-left:3px solid #e4e7ef; margin-left:8px;';
+            rowNormal.innerHTML =
+                '<div class="info">' +
+                  '<div class="cname" style="color:var(--ink2);">↳ ' + item.name +
+                    ' <span style="font-size:10px;background:#f1f3f5;color:#555;padding:1px 6px;border-radius:4px;font-weight:600;margin-left:4px;">NORMAL</span>' +
+                  '</div>' +
+                  '<div style="font-size:11px;color:var(--ink3);margin-top:2px;">@Rp ' + sp.normalPrice.toLocaleString('id-ID') + '</div>' +
+                '</div>' +
+                '<div class="cright">' +
+                  '<div class="cprice">Rp ' + subtotalNormal.toLocaleString('id-ID') + '</div>' +
+                  '<div class="qty-ctrl">' +
+                    '<button class="qty-btn minus" onclick="changeQty(' + i + ', -1)">−</button>' +
+                    '<span class="qty-num">' + sp.normalQty + '</span>' +
+                    '<button class="qty-btn" onclick="changeQty(' + i + ', 1)">+</button>' +
+                  '</div>' +
+                '</div>';
+            container.appendChild(rowNormal);
+
+        } else if (sp.grosirQty > 0 && sp.normalQty === 0) {
+            // Semua grosir (qty == min_grosir persis)
+            var rowFull = document.createElement('div');
+            rowFull.className = 'cart-row';
+            rowFull.innerHTML =
+                '<div class="info">' +
+                  '<div class="cname">' + item.name +
+                    ' <span style="font-size:10px;background:#fff4e6;color:#f76707;padding:1px 6px;border-radius:4px;font-weight:700;margin-left:4px;">GROSIR</span>' +
+                  '</div>' +
+                  '<div style="font-size:11px;color:var(--ink3);margin-top:2px;">@Rp ' + sp.grosirPrice.toLocaleString('id-ID') + ' <s style="color:#ccc;">Rp ' + sp.normalPrice.toLocaleString('id-ID') + '</s></div>' +
+                '</div>' +
+                '<div class="cright">' +
+                  '<div class="cprice">Rp ' + sp.total.toLocaleString('id-ID') + '</div>' +
+                  '<div class="qty-ctrl">' +
+                    '<button class="qty-btn minus" onclick="changeQty(' + i + ', -1)">−</button>' +
+                    '<span class="qty-num">' + item.qty + '</span>' +
+                    '<button class="qty-btn" onclick="changeQty(' + i + ', 1)">+</button>' +
+                  '</div>' +
+                '</div>';
+            container.appendChild(rowFull);
+
+        } else {
+            // Semua harga normal
+            var nearGrosir = sp.nearGrosir;
+            var badge = nearGrosir
+                ? ' <span style="font-size:10px;background:#f1f3f5;color:#8891a5;padding:1px 6px;border-radius:4px;font-weight:600;margin-left:4px;">+' + sp.sisaQty + ' → grosir</span>'
+                : '';
+            var rowNorm = document.createElement('div');
+            rowNorm.className = 'cart-row';
+            rowNorm.innerHTML =
+                '<div class="info">' +
+                  '<div class="cname">' + item.name + badge + '</div>' +
+                  '<div style="font-size:11px;color:var(--ink3);margin-top:2px;">@Rp ' + sp.normalPrice.toLocaleString('id-ID') + '</div>' +
+                '</div>' +
+                '<div class="cright">' +
+                  '<div class="cprice">Rp ' + sp.total.toLocaleString('id-ID') + '</div>' +
+                  '<div class="qty-ctrl">' +
+                    '<button class="qty-btn minus" onclick="changeQty(' + i + ', -1)">−</button>' +
+                    '<span class="qty-num">' + item.qty + '</span>' +
+                    '<button class="qty-btn" onclick="changeQty(' + i + ', 1)">+</button>' +
+                  '</div>' +
+                '</div>';
+            container.appendChild(rowNorm);
+        }
     });
 
     document.getElementById('cart-count').textContent = totalItems;
