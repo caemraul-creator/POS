@@ -1881,18 +1881,16 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
         var subtotalFmt = subtotal.toLocaleString('id-ID');
         return (
             '<tr>' +
-              '<td style="padding:1px 0 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.2px;">' +
+              '<td colspan="3" style="padding:2px 0 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.2px;">' +
                 no + '. ' + nama +
               '</td>' +
-              '<td></td>' +
-              '<td style="font-size:11px;text-align:right;color:#888;white-space:nowrap;vertical-align:top;">/000</td>' +
             '</tr>' +
             '<tr>' +
-              '<td style="padding:0 0 5px;font-size:12px;color:#444;">' +
+              '<td style="padding:0 0 4px;font-size:12px;color:#444;">' +
                 qty + ' X ' + hargaFmt +
               '</td>' +
-              '<td style="font-size:12px;text-align:center;color:#444;white-space:nowrap;">=&nbsp;Rp</td>' +
-              '<td style="font-size:12px;text-align:right;font-weight:700;white-space:nowrap;">' + subtotalFmt + '</td>' +
+              '<td style="font-size:12px;text-align:center;color:#444;font-weight:700;">=</td>' +
+              '<td style="font-size:12px;text-align:right;font-weight:700;white-space:nowrap;">Rp ' + subtotalFmt + '</td>' +
             '</tr>'
         );
     }
@@ -1917,27 +1915,27 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
     if (activePayMethod === 'Tunai') {
         metodeBayarRows =
             '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">TUNAI</td>' +
-            '<td style="font-size:12px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
-            '<td style="font-size:12px;text-align:right;font-weight:700;">' + uangBayar.toLocaleString('id-ID') + '</td></tr>' +
+            '<td style="font-size:12px;text-align:center;font-weight:700;">=</td>' +
+            '<td style="font-size:12px;text-align:right;font-weight:700;">Rp ' + uangBayar.toLocaleString('id-ID') + '</td></tr>' +
             '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">KEMBALI</td>' +
-            '<td style="font-size:12px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
-            '<td style="font-size:12px;text-align:right;font-weight:900;">' + kembalian.toLocaleString('id-ID') + '</td></tr>';
+            '<td style="font-size:12px;text-align:center;font-weight:900;">=</td>' +
+            '<td style="font-size:12px;text-align:right;font-weight:900;">Rp ' + kembalian.toLocaleString('id-ID') + '</td></tr>';
     } else {
         metodeBayarRows =
             '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">NET ' + activePayMethod.toUpperCase() + '</td>' +
-            '<td style="font-size:12px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
-            '<td style="font-size:12px;text-align:right;font-weight:800;">' + total.toLocaleString('id-ID') + '</td></tr>' +
+            '<td style="font-size:12px;text-align:center;font-weight:800;">=</td>' +
+            '<td style="font-size:12px;text-align:right;font-weight:800;">Rp ' + total.toLocaleString('id-ID') + '</td></tr>' +
             '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">NAMA CARD</td>' +
             '<td></td><td style="font-size:12px;text-align:right;">' + activePayMethod.toUpperCase() + '</td></tr>' +
             '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">KEMBALI</td>' +
-            '<td style="font-size:12px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
-            '<td style="font-size:12px;text-align:right;">0</td></tr>';
+            '<td style="font-size:12px;text-align:center;">=</td>' +
+            '<td style="font-size:12px;text-align:right;">Rp 0</td></tr>';
     }
 
     var hematRow = totalHemat > 0
         ? '<tr><td style="padding:2px 0 0;font-size:12px;font-weight:700;">ANDA HEMAT</td>' +
-          '<td style="font-size:12px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
-          '<td style="font-size:12px;text-align:right;font-weight:900;">' + totalHemat.toLocaleString('id-ID') + '</td></tr>'
+          '<td style="font-size:12px;text-align:center;font-weight:900;">=</td>' +
+          '<td style="font-size:12px;text-align:right;font-weight:900;">Rp ' + totalHemat.toLocaleString('id-ID') + '</td></tr>'
         : '';
 
     var pelLine = pelNama ? '<div style="font-size:11px;margin:2px 0;">Pelanggan: <b>' + pelNama + '</b></div>' : '';
@@ -1969,8 +1967,8 @@ itemRows +
 '<td style="font-size:12px;text-align:center;border-top:1px solid #000;">=</td>' +
 '<td style="font-size:12px;text-align:right;font-weight:700;border-top:1px solid #000;"><b>' + totalQty + '</b></td></tr>' +
 '<tr><td style="padding:1px 0;font-size:12px;font-weight:900;">TOTAL</td>' +
-'<td style="font-size:12px;text-align:center;white-space:nowrap;font-weight:700;">=&nbsp;Rp</td>' +
-'<td style="font-size:12px;text-align:right;font-weight:900;">' + total.toLocaleString('id-ID') + '</td></tr>' +
+'<td style="font-size:12px;text-align:center;font-weight:900;">=</td>' +
+'<td style="font-size:12px;text-align:right;font-weight:900;">Rp ' + total.toLocaleString('id-ID') + '</td></tr>' +
 metodeBayarRows +
 hematRow +
 '</table>' +
