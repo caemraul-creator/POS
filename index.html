@@ -1889,7 +1889,7 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
             '</tr>' +
             '<tr>' +
               '<td style="padding:0 0 5px;font-size:12px;color:#444;">' +
-                (barcode ? barcode + '&nbsp;&nbsp;' : '') + qty + ' X ' + hargaFmt +
+                qty + ' X ' + hargaFmt +
               '</td>' +
               '<td style="font-size:12px;text-align:center;color:#444;white-space:nowrap;">=&nbsp;Rp</td>' +
               '<td style="font-size:12px;text-align:right;font-weight:700;white-space:nowrap;">' + subtotalFmt + '</td>' +
@@ -1918,10 +1918,10 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
         metodeBayarRows =
             '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">TUNAI</td>' +
             '<td style="font-size:12px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
-            '<td style="font-size:12px;text-align:right;">' + uangBayar.toLocaleString('id-ID') + '</td></tr>' +
+            '<td style="font-size:12px;text-align:right;font-weight:700;">' + uangBayar.toLocaleString('id-ID') + '</td></tr>' +
             '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">KEMBALI</td>' +
             '<td style="font-size:12px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
-            '<td style="font-size:13px;text-align:right;font-weight:800;">' + kembalian.toLocaleString('id-ID') + '</td></tr>';
+            '<td style="font-size:12px;text-align:right;font-weight:900;">' + kembalian.toLocaleString('id-ID') + '</td></tr>';
     } else {
         metodeBayarRows =
             '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">NET ' + activePayMethod.toUpperCase() + '</td>' +
@@ -1937,7 +1937,7 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
     var hematRow = totalHemat > 0
         ? '<tr><td style="padding:2px 0 0;font-size:12px;font-weight:700;">ANDA HEMAT</td>' +
           '<td style="font-size:12px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
-          '<td style="font-size:13px;text-align:right;font-weight:800;">' + totalHemat.toLocaleString('id-ID') + '</td></tr>'
+          '<td style="font-size:12px;text-align:right;font-weight:900;">' + totalHemat.toLocaleString('id-ID') + '</td></tr>'
         : '';
 
     var pelLine = pelNama ? '<div style="font-size:11px;margin:2px 0;">Pelanggan: <b>' + pelNama + '</b></div>' : '';
@@ -1962,15 +1962,15 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
 pelLine +
 '<hr class="dash">' +
 '<table>' +
-'<colgroup><col style="width:auto"><col style="width:36px"><col style="width:72px"></colgroup>' +
+'<colgroup><col style="width:auto"><col style="width:40px"><col style="width:80px"></colgroup>' +
 itemRows +
-'<tr><td colspan="3" style="padding:3px 0;"><hr style="border:none;border-top:1px dashed #000;margin:0;"></td></tr>' +
-'<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">TOTAL QTY</td>' +
-'<td style="font-size:12px;text-align:center;">=</td>' +
-'<td style="font-size:12px;text-align:right;"><b>' + totalQty + '</b></td></tr>' +
-'<tr><td style="padding:1px 0;font-size:14px;font-weight:900;">TOTAL</td>' +
-'<td style="font-size:14px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
-'<td style="font-size:14px;text-align:right;font-weight:900;">' + total.toLocaleString('id-ID') + '</td></tr>' +
+
+'<tr><td style="padding:3px 0 1px;font-size:12px;font-weight:700;border-top:1px solid #000;">TOTAL QTY</td>' +
+'<td style="font-size:12px;text-align:center;border-top:1px solid #000;">=</td>' +
+'<td style="font-size:12px;text-align:right;font-weight:700;border-top:1px solid #000;"><b>' + totalQty + '</b></td></tr>' +
+'<tr><td style="padding:1px 0;font-size:12px;font-weight:900;">TOTAL</td>' +
+'<td style="font-size:12px;text-align:center;white-space:nowrap;font-weight:700;">=&nbsp;Rp</td>' +
+'<td style="font-size:12px;text-align:right;font-weight:900;">' + total.toLocaleString('id-ID') + '</td></tr>' +
 metodeBayarRows +
 hematRow +
 '</table>' +
