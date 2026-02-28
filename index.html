@@ -1881,10 +1881,11 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
         var subtotalFmt = subtotal.toLocaleString('id-ID');
         return (
             '<tr>' +
-              '<td colspan="2" style="padding:1px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.2px;">' +
+              '<td style="padding:1px 0 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.2px;">' +
                 no + '. ' + nama +
               '</td>' +
-              '<td style="font-size:11px;text-align:right;color:#888;white-space:nowrap;">/000</td>' +
+              '<td></td>' +
+              '<td style="font-size:11px;text-align:right;color:#888;white-space:nowrap;vertical-align:top;">/000</td>' +
             '</tr>' +
             '<tr>' +
               '<td style="padding:0 0 5px;font-size:12px;color:#444;">' +
@@ -1960,17 +1961,18 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
 '<div class="toko-sub">Kudus, Jawa Tengah</div>' +
 pelLine +
 '<hr class="dash">' +
-'<table>' + itemRows + '</table>' +
-'<hr class="dash">' +
 '<table>' +
-  '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">TOTAL QTY</td>' +
-  '<td style="font-size:12px;text-align:center;">=</td>' +
-  '<td style="font-size:12px;text-align:right;"><b>' + totalQty + '</b></td></tr>' +
-  '<tr><td style="padding:1px 0;font-size:14px;font-weight:900;">TOTAL</td>' +
-  '<td style="font-size:14px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
-  '<td style="font-size:14px;text-align:right;font-weight:900;">' + total.toLocaleString('id-ID') + '</td></tr>' +
-  metodeBayarRows +
-  hematRow +
+'<colgroup><col style="width:auto"><col style="width:36px"><col style="width:72px"></colgroup>' +
+itemRows +
+'<tr><td colspan="3" style="padding:3px 0;"><hr style="border:none;border-top:1px dashed #000;margin:0;"></td></tr>' +
+'<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">TOTAL QTY</td>' +
+'<td style="font-size:12px;text-align:center;">=</td>' +
+'<td style="font-size:12px;text-align:right;"><b>' + totalQty + '</b></td></tr>' +
+'<tr><td style="padding:1px 0;font-size:14px;font-weight:900;">TOTAL</td>' +
+'<td style="font-size:14px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
+'<td style="font-size:14px;text-align:right;font-weight:900;">' + total.toLocaleString('id-ID') + '</td></tr>' +
+metodeBayarRows +
+hematRow +
 '</table>' +
 '<hr class="dot">' +
 '<div class="footer-center">TERIMA KASIH</div>' +
