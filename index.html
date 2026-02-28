@@ -1949,6 +1949,7 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
 '.toko-nama{text-align:center;font-size:15px;font-weight:900;letter-spacing:1px;margin-bottom:2px;}' +
 '.toko-sub{text-align:center;font-size:10px;color:#555;margin-bottom:6px;}' +
 'hr.dash{border:none;border-top:1px dashed #000;margin:5px 0;}' +
+'hr.dash2{border:none;margin:5px 0;height:10px;background:none;border-top:1px dashed #000;border-bottom:1px dashed #000;}' +
 'hr.dot{border:none;border-top:1px dotted #000;margin:5px 0;}' +
 'table{width:100%;border-collapse:collapse;}' +
 '.footer-center{text-align:center;font-size:14px;font-weight:900;letter-spacing:3px;margin:8px 0 3px;}' +
@@ -1958,14 +1959,15 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
 '<div class="toko-nama">TOKO ANDA</div>' +
 '<div class="toko-sub">Kudus, Jawa Tengah</div>' +
 pelLine +
-'<hr class="dash">' +
+'<hr class="dash2">' +
 '<table>' +
 '<colgroup><col style="width:auto"><col style="width:40px"><col style="width:80px"></colgroup>' +
 itemRows +
 
-'<tr><td style="padding:3px 0 1px;font-size:12px;font-weight:700;border-top:1px solid #000;">TOTAL QTY</td>' +
-'<td style="font-size:12px;text-align:center;border-top:1px solid #000;">=</td>' +
-'<td style="font-size:12px;text-align:right;font-weight:700;border-top:1px solid #000;"><b>' + totalQty + '</b></td></tr>' +
+'<tr><td colspan="3" style="padding:2px 0;"><hr style="border:none;border-top:1px dashed #000;margin:0;"></td></tr>' +
+'<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">TOTAL QTY</td>' +
+'<td style="font-size:12px;text-align:center;">=</td>' +
+'<td style="font-size:12px;text-align:right;font-weight:700;"><b>' + totalQty + '</b></td></tr>' +
 '<tr><td style="padding:1px 0;font-size:12px;font-weight:900;">TOTAL</td>' +
 '<td style="font-size:12px;text-align:center;font-weight:900;">=</td>' +
 '<td style="font-size:12px;text-align:right;font-weight:900;">Rp ' + total.toLocaleString('id-ID') + '</td></tr>' +
