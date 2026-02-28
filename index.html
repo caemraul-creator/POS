@@ -1185,7 +1185,7 @@
                 <!-- Uang Bayar (hanya untuk Tunai) -->
                 <div id="uang-bayar-wrap" style="margin-bottom:10px;">
                     <div style="font-size:11px; color:var(--ink3); font-weight:600; margin-bottom:4px;">UANG BAYAR</div>
-                    <input type="number" id="uang-bayar" placeholder="0" oninput="hitungKembalian()"
+                    <input type="text" inputmode="numeric" id="uang-bayar" placeholder="0" oninput="formatUangBayar(this)"
                         style="width:100%; padding:9px 12px; border:1.5px solid var(--border); border-radius:9px;
                         font-family:'DM Mono',monospace; font-size:16px; font-weight:700; color:var(--ink);
                         background:var(--bg); outline:none; text-align:right;">
@@ -1758,10 +1758,19 @@ function selectPayMethod(btn) {
     }
 }
 
+function formatUangBayar(input) {
+    var raw = input.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+    if (raw === '') { input.value = ''; hitungKembalian(); return; }
+    var num = parseInt(raw, 10);
+    input.value = num.toLocaleString('id-ID');
+    hitungKembalian();
+}
+
 function hitungKembalian() {
     var totalEl = document.getElementById('total-price');
     var total = parseInt((totalEl.textContent || '0').replace(/[^0-9]/g, '')) || 0;
-    var bayar = parseInt(document.getElementById('uang-bayar').value) || 0;
+    var rawBayar = (document.getElementById('uang-bayar').value || '').replace(/\./g, '').replace(/[^0-9]/g, '');
+    var bayar = parseInt(rawBayar) || 0;
     var kembalian = bayar - total;
     var el = document.getElementById('kembalian-val');
     if (kembalian < 0) {
@@ -1777,7 +1786,8 @@ function hitungKembalian() {
 async function processPayment() {
     if (cart.length === 0) return showToast('Keranjang kosong!', 'error');
 
-    var uangBayar = activePayMethod === 'Tunai' ? (parseInt(document.getElementById('uang-bayar').value) || 0) : 0;
+    var rawBayar = activePayMethod === 'Tunai' ? ((document.getElementById('uang-bayar').value || '').replace(/\./g, '').replace(/[^0-9]/g, '')) : '0';
+    var uangBayar = activePayMethod === 'Tunai' ? (parseInt(rawBayar) || 0) : 0;
     var updates = {};
     var total = 0;
     var totalQty = 0;
@@ -1867,12 +1877,12 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
     var pelNama = activePelangganId && pelangganData[activePelangganId] ? pelangganData[activePelangganId].nama : '';
 
     function struKItemRow(no, nama, barcode, qty, harga, subtotal) {
-        var hargaFmt   = harga.toLocaleString('id-ID');
+        var hargaFmt    = harga.toLocaleString('id-ID');
         var subtotalFmt = subtotal.toLocaleString('id-ID');
         return (
             '<tr>' +
               '<td colspan="2" style="padding:1px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.2px;">' +
-                (no ? no + '. ' : '&nbsp;&nbsp;&nbsp;&nbsp;') + nama +
+                no + '. ' + nama +
               '</td>' +
               '<td style="font-size:11px;text-align:right;color:#888;white-space:nowrap;">/000</td>' +
             '</tr>' +
@@ -1880,45 +1890,53 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
               '<td style="padding:0 0 5px;font-size:12px;color:#444;">' +
                 (barcode ? barcode + '&nbsp;&nbsp;' : '') + qty + ' X ' + hargaFmt +
               '</td>' +
-              '<td style="font-size:12px;text-align:center;color:#444;white-space:nowrap;">= Rp</td>' +
+              '<td style="font-size:12px;text-align:center;color:#444;white-space:nowrap;">=&nbsp;Rp</td>' +
               '<td style="font-size:12px;text-align:right;font-weight:700;white-space:nowrap;">' + subtotalFmt + '</td>' +
             '</tr>'
         );
     }
 
     var itemRows = '';
-    items.forEach(function(item, idx) {
-        var no = (idx + 1).toString();
+    var lineNo = 0;
+    items.forEach(function(item) {
         if (item.grosir_qty > 0 && item.normal_qty > 0) {
-            itemRows += struKItemRow(no,   item.name + ' [GROSIR]', item.barcode, item.grosir_qty, item.harga_grosir, item.grosir_qty * item.harga_grosir);
-            itemRows += struKItemRow('',   item.name + ' [NORMAL]', '',           item.normal_qty, item.harga_normal, item.normal_qty * item.harga_normal);
+            lineNo++;
+            itemRows += struKItemRow(lineNo, item.name + '[GROSIR]', item.barcode, item.grosir_qty, item.harga_grosir, item.grosir_qty * item.harga_grosir);
+            lineNo++;
+            itemRows += struKItemRow(lineNo, item.name + '[NORMAL]', '', item.normal_qty, item.harga_normal, item.normal_qty * item.harga_normal);
         } else {
+            lineNo++;
             var harga = item.grosir_qty > 0 ? item.harga_grosir : item.harga_normal;
-            var label = item.name + (item.grosir_qty > 0 ? ' [GROSIR]' : '');
-            itemRows += struKItemRow(no, label, item.barcode, item.qty, harga, item.subtotal);
+            var label = item.name + (item.grosir_qty > 0 ? '[GROSIR]' : '');
+            itemRows += struKItemRow(lineNo, label, item.barcode, item.qty, harga, item.subtotal);
         }
     });
 
     var metodeBayarRows = '';
     if (activePayMethod === 'Tunai') {
         metodeBayarRows =
-            '<tr><td colspan="2" style="padding:1px 0;font-size:12px;font-weight:700;">TUNAI</td>' +
-            '<td style="font-size:12px;text-align:right;">Rp.= &nbsp;' + uangBayar.toLocaleString('id-ID') + '</td></tr>' +
-            '<tr><td colspan="2" style="padding:1px 0;font-size:12px;font-weight:700;">KEMBALI</td>' +
-            '<td style="font-size:13px;text-align:right;font-weight:800;">Rp.= &nbsp;' + kembalian.toLocaleString('id-ID') + '</td></tr>';
+            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">TUNAI</td>' +
+            '<td style="font-size:12px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
+            '<td style="font-size:12px;text-align:right;">' + uangBayar.toLocaleString('id-ID') + '</td></tr>' +
+            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">KEMBALI</td>' +
+            '<td style="font-size:12px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
+            '<td style="font-size:13px;text-align:right;font-weight:800;">' + kembalian.toLocaleString('id-ID') + '</td></tr>';
     } else {
         metodeBayarRows =
-            '<tr><td colspan="2" style="padding:1px 0;font-size:12px;font-weight:700;">NET ' + activePayMethod.toUpperCase() + '</td>' +
-            '<td style="font-size:12px;text-align:right;font-weight:800;">Rp.= &nbsp;' + total.toLocaleString('id-ID') + '</td></tr>' +
-            '<tr><td colspan="2" style="padding:1px 0;font-size:12px;font-weight:700;">NAMA CARD</td>' +
-            '<td style="font-size:12px;text-align:right;">' + activePayMethod.toUpperCase() + '</td></tr>' +
-            '<tr><td colspan="2" style="padding:1px 0;font-size:12px;font-weight:700;">KEMBALI</td>' +
-            '<td style="font-size:12px;text-align:right;">Rp.=</td></tr>';
+            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">NET ' + activePayMethod.toUpperCase() + '</td>' +
+            '<td style="font-size:12px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
+            '<td style="font-size:12px;text-align:right;font-weight:800;">' + total.toLocaleString('id-ID') + '</td></tr>' +
+            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">NAMA CARD</td>' +
+            '<td></td><td style="font-size:12px;text-align:right;">' + activePayMethod.toUpperCase() + '</td></tr>' +
+            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">KEMBALI</td>' +
+            '<td style="font-size:12px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
+            '<td style="font-size:12px;text-align:right;">0</td></tr>';
     }
 
     var hematRow = totalHemat > 0
-        ? '<tr><td colspan="2" style="padding:2px 0 0;font-size:12px;font-weight:700;">ANDA HEMAT---</td>' +
-          '<td style="font-size:13px;text-align:right;font-weight:800;">Rp.= &nbsp;' + totalHemat.toLocaleString('id-ID') + '</td></tr>'
+        ? '<tr><td style="padding:2px 0 0;font-size:12px;font-weight:700;">ANDA HEMAT</td>' +
+          '<td style="font-size:12px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
+          '<td style="font-size:13px;text-align:right;font-weight:800;">' + totalHemat.toLocaleString('id-ID') + '</td></tr>'
         : '';
 
     var pelLine = pelNama ? '<div style="font-size:11px;margin:2px 0;">Pelanggan: <b>' + pelNama + '</b></div>' : '';
@@ -1945,10 +1963,12 @@ pelLine +
 '<table>' + itemRows + '</table>' +
 '<hr class="dash">' +
 '<table>' +
-  '<tr><td colspan="2" style="padding:1px 0;font-size:12px;font-weight:700;">TOTAL QTY</td>' +
-  '<td style="font-size:12px;text-align:right;">= &nbsp;<b>' + totalQty + '</b></td></tr>' +
-  '<tr><td colspan="2" style="padding:1px 0;font-size:14px;font-weight:900;">TOTAL</td>' +
-  '<td style="font-size:14px;text-align:right;font-weight:900;">Rp.= &nbsp;' + total.toLocaleString('id-ID') + '</td></tr>' +
+  '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">TOTAL QTY</td>' +
+  '<td style="font-size:12px;text-align:center;">=</td>' +
+  '<td style="font-size:12px;text-align:right;"><b>' + totalQty + '</b></td></tr>' +
+  '<tr><td style="padding:1px 0;font-size:14px;font-weight:900;">TOTAL</td>' +
+  '<td style="font-size:14px;text-align:center;white-space:nowrap;">=&nbsp;Rp</td>' +
+  '<td style="font-size:14px;text-align:right;font-weight:900;">' + total.toLocaleString('id-ID') + '</td></tr>' +
   metodeBayarRows +
   hematRow +
 '</table>' +
