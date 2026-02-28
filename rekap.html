@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rekap Penjualan</title>
+    <link rel="icon" href="data:,">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #0f1117; --ink2: #3d4350; --ink3: #8891a5;
+            --border: #e4e7ef; --bg: #f0f2f8; --surface: #ffffff;
+            --accent: #3b5bdb; --accent2: #4c6ef5;
+            --green: #0ca678; --red: #f03e3e; --amber: #f59f00;
+            --surface2: #f8f9fc;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+        /* TOPBAR */
+        .topbar {
+            background: var(--ink); color: #fff;
+            padding: 0 24px; height: 56px;
+            display: flex; align-items: center; gap: 16px; flex-shrink: 0;
+        }
+        .topbar-logo { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 3px; color: var(--accent2); text-transform: uppercase; }
+        .topbar-title { font-size: 15px; font-weight: 700; flex: 1; }
+        .nav-link {
+            padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+            text-decoration: none; color: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+            transition: all 0.15s;
+        }
+        .nav-link:hover { background: rgba(255,255,255,0.15); color: #fff; }
+        .nav-link.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+        /* FILTER BAR */
+        .filter-bar {
+            background: var(--surface); border-bottom: 1px solid var(--border);
+            padding: 12px 24px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+        }
+        .filter-group { display: flex; align-items: center; gap: 8px; }
+        .filter-label { font-size: 12px; font-weight: 700; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.5px; }
+        .filter-select {
+            padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 9px;
+            font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink);
+            background: var(--bg); outline: none; cursor: pointer; transition: border-color 0.15s;
+        }
+        .filter-select:focus { border-color: var(--accent2); background: #fff; }
+        .mode-btn {
+            padding: 8px 16px; border-radius: 9px; font-size: 13px; font-weight: 600;
+            border: 1.5px solid var(--border); background: var(--bg); color: var(--ink2);
+            cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+        }
+        .mode-btn.active { border-color: var(--accent); background: #eef2ff; color: var(--accent); }
+        .mode-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .divider { width: 1px; height: 28px; background: var(--border); margin: 0 4px; }
+        .summary-chips { display: flex; gap: 8px; margin-left: auto; }
+        .chip {
+            padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700;
+            font-family: 'DM Mono', monospace;
+        }
+        .chip-blue { background: #dbe4ff; color: var(--accent); }
+        .chip-green { background: #d3f9d8; color: var(--green); }
+
+        /* CONTENT */
+        .content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+        .content::-webkit-scrollbar { width: 6px; }
+        .content::-webkit-scrollbar-thumb { background: #d0d5e8; border-radius: 3px; }
+
+        /* TABLE */
+        .rekap-table {
+            width: 100%; border-collapse: collapse;
+            background: var(--surface); border-radius: 12px; overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .rekap-table thead th {
+            padding: 12px 16px; font-size: 11px; font-weight: 700; color: var(--ink3);
+            text-transform: uppercase; letter-spacing: 0.8px;
+            background: var(--surface2); border-bottom: 2px solid var(--border);
+            text-align: left;
+        }
+        .rekap-table thead th.right { text-align: right; }
+        .rekap-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+        .rekap-table tbody tr:last-child { border-bottom: none; }
+        .rekap-table tbody tr:hover { background: var(--surface2); }
+        .rekap-table td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
+        .td-rank { font-family: 'DM Mono', monospace; font-weight: 700; font-size: 14px; color: var(--ink3); width: 40px; }
+        .td-rank.gold   { color: #f59f00; }
+        .td-rank.silver { color: #8a9bb0; }
+        .td-rank.bronze { color: #cd7f32; }
+        .td-name { font-weight: 600; color: var(--ink); }
+        .td-qty  { font-family: 'DM Mono', monospace; font-weight: 700; text-align: right; }
+        .td-omzet { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--ink2); text-align: right; }
+        .td-bar  { width: 160px; }
+
+        .bar-wrap { background: #e9ecf5; border-radius: 4px; height: 8px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.4s ease; }
+        .bar-fill.top1 { background: #f59f00; }
+        .bar-fill.top2 { background: #8a9bb0; }
+        .bar-fill.top3 { background: #cd7f32; }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: var(--ink3);
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state p { font-size: 14px; }
+
+        /* Loading */
+        .loading { text-align: center; padding: 60px; color: var(--ink3); font-size: 14px; }
+
+        /* Section title */
+        .section-title {
+            font-size: 14px; font-weight: 700; color: var(--ink2);
+            margin-bottom: 12px; padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <span class="topbar-logo">POS</span>
+    <span class="topbar-title">📊 Rekap Penjualan</span>
+    <a href="index.html" class="nav-link">🏪 Kasir</a>
+    <a href="pelanggan.html" class="nav-link">👥 Pelanggan</a>
+    <a href="rekap.html" class="nav-link active">📊 Rekap</a>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+    <!-- Mode: Bulanan / Tahunan -->
+    <div class="filter-group">
+        <span class="filter-label">Tampilan</span>
+        <button class="mode-btn active" id="btn-bulanan" onclick="setMode('bulanan')">📅 Bulanan</button>
+        <button class="mode-btn" id="btn-tahunan" onclick="setMode('tahunan')">📆 Tahunan</button>
+    </div>
+    <div class="divider"></div>
+    <!-- Filter Tahun -->
+    <div class="filter-group">
+        <span class="filter-label">Tahun</span>
+        <select class="filter-select" id="sel-tahun" onchange="render()"></select>
+    </div>
+    <!-- Filter Bulan (hanya di mode bulanan) -->
+    <div class="filter-group" id="wrap-bulan">
+        <span class="filter-label">Bulan</span>
+        <select class="filter-select" id="sel-bulan" onchange="render()">
+            <option value="1">Januari</option><option value="2">Februari</option>
+            <option value="3">Maret</option><option value="4">April</option>
+            <option value="5">Mei</option><option value="6">Juni</option>
+            <option value="7">Juli</option><option value="8">Agustus</option>
+            <option value="9">September</option><option value="10">Oktober</option>
+            <option value="11">November</option><option value="12">Desember</option>
+        </select>
+    </div>
+    <!-- Summary chips -->
+    <div class="summary-chips">
+        <div class="chip chip-blue" id="chip-transaksi">0 Transaksi</div>
+        <div class="chip chip-green" id="chip-omzet">Rp 0</div>
+    </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content" id="content">
+    <div class="loading">⏳ Memuat data...</div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="config.js"></script>
+
+<script>
+// ====== INIT ======
+var db, transaksiRef;
+var allTransaksi = {};
+var mode = 'bulanan'; // 'bulanan' | 'tahunan'
+
+var BULAN_NAMA = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    transaksiRef = db.ref('transaksi');
+    transaksiRef.on('value', function(snap) {
+        allTransaksi = snap.val() || {};
+        populateTahun();
+        render();
+    });
+} catch(e) {
+    document.getElementById('content').innerHTML = '<div class="loading">❌ Gagal koneksi: ' + e.message + '</div>';
+}
+
+// ====== POPULATE TAHUN ======
+function populateTahun() {
+    var years = new Set();
+    var now = new Date();
+    years.add(now.getFullYear());
+    Object.values(allTransaksi).forEach(function(t) {
+        if (t.tahun) years.add(t.tahun);
+        else if (t.timestamp) years.add(new Date(t.timestamp).getFullYear());
+    });
+    var sel = document.getElementById('sel-tahun');
+    var current = sel.value;
+    sel.innerHTML = '';
+    Array.from(years).sort(function(a,b){return b-a;}).forEach(function(y) {
+        var o = document.createElement('option');
+        o.value = y; o.textContent = y;
+        sel.appendChild(o);
+    });
+    if (current) sel.value = current;
+
+    // Set bulan to current
+    var bSel = document.getElementById('sel-bulan');
+    if (!bSel.value) bSel.value = now.getMonth() + 1;
+}
+
+// ====== MODE ======
+function setMode(m) {
+    mode = m;
+    document.getElementById('btn-bulanan').classList.toggle('active', m === 'bulanan');
+    document.getElementById('btn-tahunan').classList.toggle('active', m === 'tahunan');
+    document.getElementById('wrap-bulan').style.display = m === 'bulanan' ? 'flex' : 'none';
+    render();
+}
+
+// ====== RENDER ======
+function render() {
+    var tahun = parseInt(document.getElementById('sel-tahun').value);
+    var bulan = parseInt(document.getElementById('sel-bulan').value);
+
+    // Filter transaksi
+    var filtered = Object.values(allTransaksi).filter(function(t) {
+        var tTahun = t.tahun || (t.timestamp ? new Date(t.timestamp).getFullYear() : null);
+        var tBulan = t.bulan || (t.timestamp ? new Date(t.timestamp).getMonth() + 1 : null);
+        if (mode === 'tahunan') return tTahun === tahun;
+        return tTahun === tahun && tBulan === bulan;
+    });
+
+    // Aggregate per item
+    var map = {}; // { name: { qty, omzet } }
+    filtered.forEach(function(t) {
+        if (!t.items) return;
+        t.items.forEach(function(item) {
+            var key = item.name;
+            if (!map[key]) map[key] = { name: key, qty: 0, omzet: 0 };
+            map[key].qty   += item.qty || 0;
+            map[key].omzet += item.subtotal || 0;
+        });
+    });
+
+    var rows = Object.values(map).sort(function(a,b) { return b.qty - a.qty; });
+    var totalOmzet = filtered.reduce(function(s,t){return s+(t.total||0);}, 0);
+
+    // Summary chips
+    document.getElementById('chip-transaksi').textContent = filtered.length + ' Transaksi';
+    document.getElementById('chip-omzet').textContent = 'Rp ' + totalOmzet.toLocaleString('id-ID');
+
+    var judul = mode === 'tahunan'
+        ? 'Rekap Tahunan — ' + tahun
+        : 'Rekap Bulanan — ' + BULAN_NAMA[bulan] + ' ' + tahun;
+
+    var maxQty = rows.length > 0 ? rows[0].qty : 1;
+    var content = document.getElementById('content');
+
+    if (rows.length === 0) {
+        content.innerHTML =
+            '<p class="section-title">' + judul + '</p>' +
+            '<div class="empty-state"><div class="icon">📭</div><p>Tidak ada data penjualan untuk periode ini.</p></div>';
+        return;
+    }
+
+    var html = '<p class="section-title">' + judul + ' · ' + rows.length + ' produk terjual</p>';
+    html += '<table class="rekap-table"><thead><tr>' +
+        '<th style="width:48px;">#</th>' +
+        '<th>Nama Produk</th>' +
+        '<th class="right">Qty Terjual</th>' +
+        '<th class="right">Omzet</th>' +
+        '<th class="td-bar">Proporsi</th>' +
+        '</tr></thead><tbody>';
+
+    rows.forEach(function(row, i) {
+        var rank = i + 1;
+        var rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
+        var barClass  = rank === 1 ? 'top1' : rank === 2 ? 'top2' : rank === 3 ? 'top3' : '';
+        var pct = Math.round((row.qty / maxQty) * 100);
+        var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+        html +=
+            '<tr>' +
+            '<td class="td-rank ' + rankClass + '">' + medal + '</td>' +
+            '<td class="td-name">' + escHtml(row.name) + '</td>' +
+            '<td class="td-qty">' + row.qty.toLocaleString('id-ID') + ' pcs</td>' +
+            '<td class="td-omzet">Rp ' + row.omzet.toLocaleString('id-ID') + '</td>' +
+            '<td class="td-bar"><div class="bar-wrap"><div class="bar-fill ' + barClass + '" style="width:' + pct + '%"></div></div></td>' +
+            '</tr>';
+    });
+
+    html += '</tbody></table>';
+    content.innerHTML = html;
+}
+
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
