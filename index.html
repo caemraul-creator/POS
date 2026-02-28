@@ -1902,7 +1902,7 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
             lineNo++;
             itemRows += struKItemRow(lineNo, item.name + '[GROSIR]', item.barcode, item.grosir_qty, item.harga_grosir, item.grosir_qty * item.harga_grosir);
             lineNo++;
-            itemRows += struKItemRow(lineNo, item.name + '[NORMAL]', '', item.normal_qty, item.harga_normal, item.normal_qty * item.harga_normal);
+            itemRows += struKItemRow(lineNo, item.name, '', item.normal_qty, item.harga_normal, item.normal_qty * item.harga_normal);
         } else {
             lineNo++;
             var harga = item.grosir_qty > 0 ? item.harga_grosir : item.harga_normal;
