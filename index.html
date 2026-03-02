@@ -1593,6 +1593,11 @@ function checkAdminPassword() {
 }
 
 // ========== NAVIGATION ==========
+function resetRole() {
+    localStorage.removeItem('appRole');
+    location.reload();
+}
+
 function setRole(role) {
     localStorage.setItem('appRole', role);
     document.getElementById('role-screen').classList.add('hidden');
