@@ -2165,18 +2165,24 @@ hematRow +
 
 // ========== FORMAT RUPIAH INPUT ==========
 function fmtRp(input) {
-    var pos = input.selectionStart;
     var raw = input.value.replace(/\./g, '').replace(/[^0-9]/g, '');
     if (raw === '') { input.value = ''; return; }
     var formatted = parseInt(raw, 10).toLocaleString('id-ID');
     input.value = formatted;
-    // Adjust cursor position
-    var diff = formatted.length - (pos === input.value.length ? formatted.length : pos);
-    try { input.setSelectionRange(diff, diff); } catch(e) {}
+    // Always put cursor at end
+    var len = formatted.length;
+    try { input.setSelectionRange(len, len); } catch(e) {}
 }
 
 function parseRp(val) {
     return parseInt(String(val).replace(/\./g, '').replace(/[^0-9]/g, '')) || 0;
+}
+
+// Debounce helper
+var _debounceTimers = {};
+function debounce(key, fn, delay) {
+    clearTimeout(_debounceTimers[key]);
+    _debounceTimers[key] = setTimeout(fn, delay || 600);
 }
 
 // ========== GUDANG ==========
@@ -2239,11 +2245,26 @@ function addProduct() {
     }).catch(function(e) { showToast('Gagal: ' + e.message, 'error'); });
 }
 
+function saveStockInput(id) {
+    var input = document.getElementById('stock-' + id);
+    if (!input) return;
+    var newStock = parseInt(input.value) || 0;
+    if (newStock < 0) { newStock = 0; input.value = 0; }
+    productsRef.child(id + '/stock').set(newStock);
+}
+
+function adjustStock(id, delta) {
+    var input = document.getElementById('stock-' + id);
+    var current = input ? (parseInt(input.value) || 0) : (productsData[id] ? productsData[id].stock : 0);
+    var newStock = Math.max(0, current + delta);
+    if (input) input.value = newStock;
+    productsRef.child(id + '/stock').set(newStock);
+}
+
+// Keep updateStock for backward compat
 function updateStock(id, newStock) {
     if (newStock < 0) newStock = 0;
-    var updates = {};
-    updates['/products/' + id + '/stock'] = newStock;
-    db.ref().update(updates);
+    productsRef.child(id + '/stock').set(newStock);
 }
 
 function deleteProduct(id) {
@@ -2254,6 +2275,9 @@ function deleteProduct(id) {
 }
 
 function renderStockGudang() {
+    // Don't re-render if a stock input is being edited
+    if (document.activeElement && document.activeElement.classList.contains('stock-input')) return;
+
     var q = (document.getElementById('search-gudang').value || '').toLowerCase();
     var tbody = document.getElementById('stock-list');
     tbody.innerHTML = '';
@@ -2272,12 +2296,10 @@ function renderStockGudang() {
         var p = productsData[id];
         var tr = document.createElement('tr');
 
-        // Foto
         var imgHtml = p.image
             ? '<img src="' + p.image + '" class="prod-thumb" alt="' + p.name + '">'
             : '<div class="prod-thumb-placeholder">📦</div>';
 
-        // Barcode batang
         var bcHtml;
         if (p.barcode) {
             var svgId = 'bc-' + id;
@@ -2293,28 +2315,22 @@ function renderStockGudang() {
             '<td class="td-price">Rp ' + p.price.toLocaleString('id-ID') + '</td>' +
             '<td>' + bcHtml + '</td>' +
             '<td><div class="td-stock-ctrl">' +
-            '<button class="sctrl-btn minus" onclick="updateStock(\'' + id + '\', ' + (p.stock - 1) + ')">−</button>' +
-            '<input type="number" class="stock-input ' + stockClass + '" value="' + p.stock + '" min="0"' +
-            ' onchange="updateStock(\'' + id + '\', parseInt(this.value)||0)"' +
+            '<button class="sctrl-btn minus" onclick="adjustStock(\'' + id + '\', -1)">−</button>' +
+            '<input type="number" class="stock-input ' + stockClass + '" id="stock-' + id + '" value="' + p.stock + '" min="0"' +
+            ' oninput="debounce(\'stock-' + id + '\', function(){ saveStockInput(\'' + id + '\') }, 800)"' +
             ' onkeydown="if(event.key===\'Enter\')this.blur()">' +
-            '<button class="sctrl-btn plus" onclick="updateStock(\'' + id + '\', ' + (p.stock + 1) + ')">+</button>' +
+            '<button class="sctrl-btn plus" onclick="adjustStock(\'' + id + '\', 1)">+</button>' +
             '</div></td>' +
             '<td><div class="action-btns"><button class="edit-btn" onclick="openEditModal(\'' + id + '\')">✏</button><button class="del-btn" onclick="deleteProduct(\'' + id + '\')">🗑</button></div></td>';
         tbody.appendChild(tr);
 
-        // Render barcode SVG setelah element masuk DOM
         if (p.barcode) {
             try {
                 JsBarcode('#bc-' + id, p.barcode, {
-                    format: 'CODE128',
-                    width: 1.5,
-                    height: 40,
-                    displayValue: true,
-                    fontSize: 9,
-                    margin: 4,
-                    background: 'transparent'
+                    format: 'CODE128', width: 1.5, height: 40,
+                    displayValue: true, fontSize: 9, margin: 4, background: 'transparent'
                 });
-            } catch(e) { /* barcode tidak valid */ }
+            } catch(e) {}
         }
     });
 }
