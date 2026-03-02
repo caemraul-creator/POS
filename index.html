@@ -1217,6 +1217,7 @@
         <div class="kasir-topbar">
             <span class="topbar-title" style="font-size:15px; font-weight:700; color:#fff;">🏪 POS Kasir</span>
             <a href="pelanggan.html" style="padding:6px 12px; background:rgba(255,255,255,0.12); color:#fff; border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; border:1px solid rgba(255,255,255,0.2);">👥</a>
+            <button onclick="checkAdminPasswordThenSwitch()" style="padding:6px 12px; background:rgba(255,191,0,0.2); color:#ffe066; border-radius:8px; font-size:12px; font-weight:700; border:1px solid rgba(255,191,0,0.3); cursor:pointer; font-family:'DM Sans',sans-serif;">📦 Gudang</button>
             <button class="exit-btn" onclick="resetRole()" style="background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.2);">Keluar</button>
         </div>
 
@@ -1312,6 +1313,7 @@
                 <span id="low-stock-badge" class="low-stock-badge" onclick="toggleLowStockPanel()" style="display:none;">
                     ⚠ <span id="low-stock-count">0</span> Menipis
                 </span>
+                <button onclick="switchToKasir()" style="padding:7px 14px; background:#e6fcf5; color:#0ca678; border-radius:8px; font-size:13px; font-weight:700; border:1.5px solid #96f2d7; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s;" onmouseover="this.style.background='#0ca678';this.style.color='#fff';" onmouseout="this.style.background='#e6fcf5';this.style.color='#0ca678';">🏪 Ke Kasir</button>
                 <a href="riwayat.html" style="padding:7px 14px; background:rgba(59,91,219,0.12); color:var(--accent); border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; border:1px solid rgba(59,91,219,0.25);">📋 Riwayat</a>
                 <a href="rekap.html" style="padding:7px 14px; background:#fff3bf; color:#b07d00; border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; border:1px solid #ffe066;">📊 Rekap</a>
                 <button class="exit-btn" onclick="resetRole()">Keluar</button>
@@ -1604,9 +1606,24 @@ function setRole(role) {
     }
 }
 
-function resetRole() {
-    localStorage.removeItem('appRole');
-    location.reload();
+function checkAdminPasswordThenSwitch() {
+    var pass = prompt("Masukkan Password Gudang:");
+    if (pass === ADMIN_PASSWORD) {
+        document.getElementById('kasir-screen').classList.add('hidden');
+        document.getElementById('gudang-screen').classList.remove('hidden');
+        localStorage.setItem('appRole', 'gudang');
+        renderStockGudang();
+    } else if (pass !== null) {
+        alert("Password salah!");
+    }
+}
+
+function switchToKasir() {
+    document.getElementById('gudang-screen').classList.add('hidden');
+    document.getElementById('kasir-screen').classList.remove('hidden');
+    localStorage.setItem('appRole', 'kasir');
+    loadPelangganDropdown();
+    renderCart();
 }
 
 var currentRole = localStorage.getItem('appRole');
