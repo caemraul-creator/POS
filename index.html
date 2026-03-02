@@ -854,6 +854,8 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            image-rendering: auto;
+            object-fit: cover;
         }
 
         .scanner-line {
@@ -2522,12 +2524,34 @@ function startCamera() {
         document.getElementById('scanner-result').textContent = '❌ Kamera tidak didukung di browser ini';
         return;
     }
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    var constraints = {
+        video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            focusMode: { ideal: 'continuous' },
+            advanced: [{ focusMode: 'continuous' }]
+        }
+    };
+    navigator.mediaDevices.getUserMedia(constraints)
         .then(function(stream) {
             scannerStream = stream;
             var video = document.getElementById('scanner-video');
             video.srcObject = stream;
             video.play();
+
+            // Aktifkan autofocus & torch jika didukung
+            var track = stream.getVideoTracks()[0];
+            if (track && track.applyConstraints) {
+                track.applyConstraints({
+                    advanced: [
+                        { focusMode: 'continuous' },
+                        { exposureMode: 'continuous' },
+                        { whiteBalanceMode: 'continuous' }
+                    ]
+                }).catch(function() {});
+            }
+
             startBarcodeDetection(video);
         })
         .catch(function(e) {
