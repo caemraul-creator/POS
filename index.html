@@ -624,6 +624,27 @@
             text-align: center;
         }
 
+        .stock-input {
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            width: 56px;
+            text-align: center;
+            border: 1.5px solid var(--border);
+            border-radius: 7px;
+            padding: 3px 6px;
+            background: var(--bg);
+            color: var(--ink);
+            outline: none;
+            transition: border-color 0.15s;
+            -moz-appearance: textfield;
+        }
+        .stock-input::-webkit-inner-spin-button,
+        .stock-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+        .stock-input:focus { border-color: var(--accent2); background: #fff; }
+        .stock-input.low { color: var(--amber); border-color: #ffe066; }
+        .stock-input.empty { color: var(--red); border-color: #ffc9c9; }
+
         .sctrl-btn {
             width: 26px;
             height: 26px;
@@ -1328,12 +1349,12 @@
                 </div>
                 <div class="form-group">
                     <label>Harga Jual Eceran (Rp)</label>
-                    <input type="number" id="new-price" placeholder="15000">
+                    <input type="text" inputmode="numeric" id="new-price" placeholder="15.000" oninput="fmtRp(this)">
                 </div>
                 <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                     <div>
                         <label style="display:block; font-size:11px; font-weight:700; color:var(--ink2); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">Harga Grosir (Rp)</label>
-                        <input type="number" id="new-harga-grosir" placeholder="12000" style="margin:0;">
+                        <input type="text" inputmode="numeric" id="new-harga-grosir" placeholder="12.000" oninput="fmtRp(this)" style="margin:0;">
                     </div>
                     <div>
                         <label style="display:block; font-size:11px; font-weight:700; color:var(--ink2); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">Min. Qty Grosir</label>
@@ -1342,7 +1363,7 @@
                 </div>
                 <div class="form-group">
                     <label>Harga Modal / HPP (Rp)</label>
-                    <input type="number" id="new-hpp" placeholder="10000" style="border-color: #c3fae8;">
+                    <input type="text" inputmode="numeric" id="new-hpp" placeholder="10.000" oninput="fmtRp(this)" style="border-color: #c3fae8;">
                     <div style="font-size:11px; color:var(--ink3); margin-top:4px;">💡 Untuk kalkulasi laba di rekap</div>
                 </div>
                 <div class="form-group">
@@ -1426,17 +1447,17 @@
             </div>
             <div class="form-group">
                 <label>Harga Jual Eceran (Rp)</label>
-                <input type="number" id="edit-price" placeholder="Harga">
+                <input type="text" inputmode="numeric" id="edit-price" placeholder="Harga" oninput="fmtRp(this)">
             </div>
             <div class="form-group">
                 <label>Harga Modal / HPP (Rp)</label>
-                <input type="number" id="edit-hpp" placeholder="0" style="border-color: #c3fae8;">
+                <input type="text" inputmode="numeric" id="edit-hpp" placeholder="0" oninput="fmtRp(this)" style="border-color: #c3fae8;">
                 <div style="font-size:11px; color:var(--ink3); margin-top:4px;">💡 Untuk kalkulasi laba di rekap</div>
             </div>
             <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                 <div>
                     <label style="display:block; font-size:11px; font-weight:700; color:var(--ink2); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">Harga Grosir (Rp)</label>
-                    <input type="number" id="edit-harga-grosir" placeholder="0" style="margin:0;">
+                    <input type="text" inputmode="numeric" id="edit-harga-grosir" placeholder="0" oninput="fmtRp(this)" style="margin:0;">
                 </div>
                 <div>
                     <label style="display:block; font-size:11px; font-weight:700; color:var(--ink2); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">Min. Qty Grosir</label>
@@ -2142,6 +2163,22 @@ hematRow +
 
 
 
+// ========== FORMAT RUPIAH INPUT ==========
+function fmtRp(input) {
+    var pos = input.selectionStart;
+    var raw = input.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+    if (raw === '') { input.value = ''; return; }
+    var formatted = parseInt(raw, 10).toLocaleString('id-ID');
+    input.value = formatted;
+    // Adjust cursor position
+    var diff = formatted.length - (pos === input.value.length ? formatted.length : pos);
+    try { input.setSelectionRange(diff, diff); } catch(e) {}
+}
+
+function parseRp(val) {
+    return parseInt(String(val).replace(/\./g, '').replace(/[^0-9]/g, '')) || 0;
+}
+
 // ========== GUDANG ==========
 var newImageData = null;
 
@@ -2173,13 +2210,13 @@ function previewImage(event) {
 
 function addProduct() {
     var name = document.getElementById('new-name').value.trim();
-    var price = parseInt(document.getElementById('new-price').value);
+    var price = parseRp(document.getElementById('new-price').value);
     var stock = parseInt(document.getElementById('new-stock').value);
     var barcode = document.getElementById('new-barcode').value.trim();
-    var harga_grosir = parseInt(document.getElementById('new-harga-grosir').value) || 0;
+    var harga_grosir = parseRp(document.getElementById('new-harga-grosir').value);
     var min_grosir = parseInt(document.getElementById('new-min-grosir').value) || 0;
-    var hpp = parseInt(document.getElementById('new-hpp').value) || 0;
-    if (!name || isNaN(price) || isNaN(stock)) { showToast('Lengkapi semua data!', 'error'); return; }
+    var hpp = parseRp(document.getElementById('new-hpp').value);
+    if (!name || !price || isNaN(stock)) { showToast('Lengkapi semua data!', 'error'); return; }
     var data = { name: name, price: price, stock: stock };
     if (barcode) data.barcode = barcode;
     if (harga_grosir > 0) data.harga_grosir = harga_grosir;
@@ -2249,6 +2286,7 @@ function renderStockGudang() {
             bcHtml = '<span class="bc-none">—</span>';
         }
 
+        var stockClass = p.stock === 0 ? 'empty' : p.stock <= 5 ? 'low' : '';
         tr.innerHTML =
             '<td class="td-img">' + imgHtml + '</td>' +
             '<td class="td-name">' + p.name + (p.harga_grosir ? '<br><span style="font-size:10px; color:var(--amber); font-family:DM Mono,monospace; font-weight:600;">Grosir: Rp ' + p.harga_grosir.toLocaleString('id-ID') + ' (min.' + (p.min_grosir||0) + ')</span>' : '') + '</td>' +
@@ -2256,7 +2294,9 @@ function renderStockGudang() {
             '<td>' + bcHtml + '</td>' +
             '<td><div class="td-stock-ctrl">' +
             '<button class="sctrl-btn minus" onclick="updateStock(\'' + id + '\', ' + (p.stock - 1) + ')">−</button>' +
-            '<span class="stock-num">' + p.stock + '</span>' +
+            '<input type="number" class="stock-input ' + stockClass + '" value="' + p.stock + '" min="0"' +
+            ' onchange="updateStock(\'' + id + '\', parseInt(this.value)||0)"' +
+            ' onkeydown="if(event.key===\'Enter\')this.blur()">' +
             '<button class="sctrl-btn plus" onclick="updateStock(\'' + id + '\', ' + (p.stock + 1) + ')">+</button>' +
             '</div></td>' +
             '<td><div class="action-btns"><button class="edit-btn" onclick="openEditModal(\'' + id + '\')">✏</button><button class="del-btn" onclick="deleteProduct(\'' + id + '\')">🗑</button></div></td>';
@@ -2287,9 +2327,9 @@ function openEditModal(id) {
     if (!p) return;
     document.getElementById('edit-id').value = id;
     document.getElementById('edit-name').value = p.name;
-    document.getElementById('edit-price').value = p.price;
-    document.getElementById('edit-hpp').value = p.hpp || '';
-    document.getElementById('edit-harga-grosir').value = p.harga_grosir || '';
+    document.getElementById('edit-price').value = p.price ? p.price.toLocaleString('id-ID') : '';
+    document.getElementById('edit-hpp').value = p.hpp ? p.hpp.toLocaleString('id-ID') : '';
+    document.getElementById('edit-harga-grosir').value = p.harga_grosir ? p.harga_grosir.toLocaleString('id-ID') : '';
     document.getElementById('edit-min-grosir').value = p.min_grosir || '';
     document.getElementById('edit-stock').value = p.stock;
     document.getElementById('edit-barcode').value = p.barcode || '';
@@ -2339,14 +2379,14 @@ function previewEditImage(event) {
 function saveEdit() {
     var id = document.getElementById('edit-id').value;
     var name = document.getElementById('edit-name').value.trim();
-    var price = parseInt(document.getElementById('edit-price').value);
+    var price = parseRp(document.getElementById('edit-price').value);
     var stock = parseInt(document.getElementById('edit-stock').value);
     var barcode = document.getElementById('edit-barcode').value.trim();
-    var hpp = parseInt(document.getElementById('edit-hpp').value) || 0;
-    if (!name || isNaN(price) || isNaN(stock)) { showToast('Lengkapi semua data!', 'error'); return; }
+    var hpp = parseRp(document.getElementById('edit-hpp').value);
+    if (!name || !price || isNaN(stock)) { showToast('Lengkapi semua data!', 'error'); return; }
     var data = { name: name, price: price, stock: stock };
     if (barcode) data.barcode = barcode; else data.barcode = null;
-    var hg = parseInt(document.getElementById('edit-harga-grosir').value) || 0;
+    var hg = parseRp(document.getElementById('edit-harga-grosir').value);
     var mg = parseInt(document.getElementById('edit-min-grosir').value) || 0;
     data.harga_grosir = hg > 0 ? hg : null;
     data.min_grosir = mg > 0 ? mg : null;
