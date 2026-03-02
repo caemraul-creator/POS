@@ -992,6 +992,98 @@
             .gudang-left { width: 100%; max-height: 50vh; }
         }
 
+        /* ========== HOLD TRANSAKSI ========== */
+        .hold-bar {
+            display: flex; gap: 6px; margin-bottom: 8px;
+        }
+        .hold-btn {
+            flex: 0 0 auto; padding: 8px 14px;
+            background: #fff3bf; color: #865400; border: 1.5px solid #ffe066;
+            border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+            font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+        }
+        .hold-btn:hover { background: #ffe066; }
+        .hold-slot-select {
+            flex: 1; padding: 8px 10px; border: 1.5px solid var(--border);
+            border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: 12px;
+            color: var(--ink); background: var(--bg); outline: none; cursor: pointer;
+        }
+        .hold-slot-select:focus { border-color: var(--amber); }
+        .hold-count-badge {
+            display: inline-block; background: var(--amber); color: #fff;
+            border-radius: 50%; width: 18px; height: 18px; font-size: 10px;
+            font-weight: 800; line-height: 18px; text-align: center; margin-left: 4px;
+        }
+
+        /* ========== LOW STOCK BADGE & PANEL ========== */
+        .low-stock-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 5px 12px; border-radius: 8px;
+            background: #fff3bf; color: #865400; border: 1px solid #ffe066;
+            font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .low-stock-badge.urgent { background: #ffe3e3; color: var(--red); border-color: #ffc9c9; }
+        .low-stock-badge:hover { filter: brightness(0.95); }
+        .low-stock-badge .badge-count {
+            background: var(--amber); color: #fff; border-radius: 50%;
+            width: 18px; height: 18px; font-size: 10px; font-weight: 800;
+            line-height: 18px; text-align: center; display: inline-block;
+        }
+        .low-stock-badge.urgent .badge-count { background: var(--red); }
+
+        .low-stock-panel {
+            background: #fffbf0; border-bottom: 2px solid #ffe066;
+            padding: 12px 20px; flex-shrink: 0; display: none;
+        }
+        .low-stock-panel.show { display: block; }
+        .low-stock-panel h5 {
+            font-size: 11px; font-weight: 700; color: #865400;
+            text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;
+        }
+        .low-stock-items { display: flex; gap: 6px; flex-wrap: wrap; }
+        .low-stock-item {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+            background: #fff; border: 1.5px solid #ffe066; color: #865400;
+        }
+        .low-stock-item.out { background: #fff5f5; border-color: #ffc9c9; color: var(--red); }
+
+        /* ========== SUCCESS / WA MODAL ========== */
+        .success-modal-box {
+            background: #fff; border-radius: 20px; padding: 28px 24px;
+            width: 320px; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .success-icon { font-size: 56px; margin-bottom: 10px; }
+        .success-title { font-size: 20px; font-weight: 800; color: var(--ink); margin-bottom: 4px; }
+        .success-sub { font-size: 13px; color: var(--ink3); margin-bottom: 20px; }
+        .success-total {
+            background: var(--bg); border-radius: 12px; padding: 12px 16px;
+            margin-bottom: 16px; font-family: 'DM Mono', monospace;
+            font-size: 22px; font-weight: 800; color: var(--ink);
+        }
+        .success-actions { display: flex; flex-direction: column; gap: 8px; }
+        .btn-wa {
+            width: 100%; padding: 13px; border-radius: 12px; border: none;
+            background: #25d366; color: #fff; font-family: 'DM Sans', sans-serif;
+            font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+        }
+        .btn-wa:hover { background: #1da851; }
+        .btn-print-struk {
+            width: 100%; padding: 13px; border-radius: 12px; border: none;
+            background: var(--accent); color: #fff; font-family: 'DM Sans', sans-serif;
+            font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+        }
+        .btn-print-struk:hover { background: var(--accent2); }
+        .btn-close-success {
+            width: 100%; padding: 11px; border-radius: 12px;
+            border: 1.5px solid var(--border); background: var(--bg);
+            font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+            cursor: pointer; color: var(--ink2);
+        }
+        .btn-close-success:hover { background: var(--border); }
+
         /* =========== KASIR FULLSCREEN =========== */
         .kasir-fullscreen {
             height: 100vh;
@@ -1195,6 +1287,12 @@
                     </div>
                 </div>
             </div>
+            <div class="hold-bar">
+                <button class="hold-btn" onclick="holdTransaksi()">⏸ Tahan <span id="hold-count-badge" class="hold-count-badge" style="display:none;">0</span></button>
+                <select class="hold-slot-select" id="hold-slot-select" onchange="loadHold(this.value)">
+                    <option value="">— Pulihkan transaksi ditahan —</option>
+                </select>
+            </div>
             <button class="pay-btn" onclick="processPayment()" style="border-radius:14px; font-size:16px; padding:16px; margin-top:12px;">
                 BAYAR & CETAK STRUK →
             </button>
@@ -1211,6 +1309,10 @@
             <div class="panel-topbar">
                 <span class="topbar-title">Gudang Pro</span>
                 <span class="topbar-tag tag-gudang">GUDANG</span>
+                <span id="low-stock-badge" class="low-stock-badge" onclick="toggleLowStockPanel()" style="display:none;">
+                    ⚠ <span id="low-stock-count">0</span> Menipis
+                </span>
+                <a href="riwayat.html" style="padding:7px 14px; background:rgba(59,91,219,0.12); color:var(--accent); border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; border:1px solid rgba(59,91,219,0.25);">📋 Riwayat</a>
                 <a href="rekap.html" style="padding:7px 14px; background:#fff3bf; color:#b07d00; border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; border:1px solid #ffe066;">📊 Rekap</a>
                 <button class="exit-btn" onclick="resetRole()">Keluar</button>
             </div>
@@ -1236,6 +1338,11 @@
                         <label style="display:block; font-size:11px; font-weight:700; color:var(--ink2); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">Min. Qty Grosir</label>
                         <input type="number" id="new-min-grosir" placeholder="12" style="margin:0;">
                     </div>
+                </div>
+                <div class="form-group">
+                    <label>Harga Modal / HPP (Rp)</label>
+                    <input type="number" id="new-hpp" placeholder="10000" style="border-color: #c3fae8;">
+                    <div style="font-size:11px; color:var(--ink3); margin-top:4px;">💡 Untuk kalkulasi laba di rekap</div>
                 </div>
                 <div class="form-group">
                     <label>Stok Awal</label>
@@ -1280,6 +1387,10 @@
                     Cek Stok
                 </button>
             </div>
+            <div id="low-stock-panel" class="low-stock-panel">
+                <h5>⚠ Produk Perlu Restock</h5>
+                <div class="low-stock-items" id="low-stock-items-list"></div>
+            </div>
             <div class="stock-scroll">
                 <table class="stock-table">
                     <thead>
@@ -1315,6 +1426,11 @@
             <div class="form-group">
                 <label>Harga Jual Eceran (Rp)</label>
                 <input type="number" id="edit-price" placeholder="Harga">
+            </div>
+            <div class="form-group">
+                <label>Harga Modal / HPP (Rp)</label>
+                <input type="number" id="edit-hpp" placeholder="0" style="border-color: #c3fae8;">
+                <div style="font-size:11px; color:var(--ink3); margin-top:4px;">💡 Untuk kalkulasi laba di rekap</div>
             </div>
             <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                 <div>
@@ -1391,6 +1507,24 @@
             <div class="scanner-corner br"></div>
         </div>
         <div class="scanner-result" id="scanner-result">Arahkan kamera ke barcode produk...</div>
+    </div>
+</div>
+
+<!-- SUCCESS / WA MODAL -->
+<div id="success-modal" class="modal-overlay hidden">
+    <div class="success-modal-box">
+        <div class="success-icon">✅</div>
+        <div class="success-title">Pembayaran Berhasil!</div>
+        <div class="success-sub" id="success-sub-text">Transaksi telah disimpan</div>
+        <div class="success-total" id="success-total-display">Rp 0</div>
+        <div class="success-actions">
+            <button class="btn-wa" onclick="shareWA()">
+                <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.104.546 4.08 1.502 5.797L.057 23.716a.5.5 0 00.614.62l5.984-1.427A11.956 11.956 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.916 0-3.713-.5-5.267-1.375l-.377-.22-3.906.931.958-3.802-.239-.386A10 10 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                Kirim Struk via WhatsApp
+            </button>
+            <button class="btn-print-struk" onclick="doCetakStruk()">🖨 Cetak Struk Printer</button>
+            <button class="btn-close-success" onclick="closeSuccessModal()">Lanjut Transaksi</button>
+        </div>
     </div>
 </div>
 
@@ -1858,7 +1992,7 @@ async function processPayment() {
         var ref = await transaksiRef.push(trx);
         var trxId = ref.key;
         showToast('✅ Pembayaran berhasil!', 'success');
-        cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBayar, d);
+        showSuccessModal(trxId, items, total, totalQty, totalHemat, kembalian, uangBayar, d);
         
         cart = [];
         renderCart();
@@ -2023,11 +2157,13 @@ function addProduct() {
     var barcode = document.getElementById('new-barcode').value.trim();
     var harga_grosir = parseInt(document.getElementById('new-harga-grosir').value) || 0;
     var min_grosir = parseInt(document.getElementById('new-min-grosir').value) || 0;
+    var hpp = parseInt(document.getElementById('new-hpp').value) || 0;
     if (!name || isNaN(price) || isNaN(stock)) { showToast('Lengkapi semua data!', 'error'); return; }
     var data = { name: name, price: price, stock: stock };
     if (barcode) data.barcode = barcode;
     if (harga_grosir > 0) data.harga_grosir = harga_grosir;
     if (min_grosir > 0) data.min_grosir = min_grosir;
+    if (hpp > 0) data.hpp = hpp;
     if (newImageData) data.image = newImageData;
     productsRef.push(data).then(function() {
         showToast('✅ Produk berhasil ditambahkan!', 'success');
@@ -2037,6 +2173,7 @@ function addProduct() {
         document.getElementById('new-barcode').value = '';
         document.getElementById('new-harga-grosir').value = '';
         document.getElementById('new-min-grosir').value = '';
+        document.getElementById('new-hpp').value = '';
         document.getElementById('new-image').value = '';
         document.getElementById('img-preview-thumb').style.display = 'none';
         document.getElementById('img-upload-placeholder').style.display = 'block';
@@ -2130,6 +2267,7 @@ function openEditModal(id) {
     document.getElementById('edit-id').value = id;
     document.getElementById('edit-name').value = p.name;
     document.getElementById('edit-price').value = p.price;
+    document.getElementById('edit-hpp').value = p.hpp || '';
     document.getElementById('edit-harga-grosir').value = p.harga_grosir || '';
     document.getElementById('edit-min-grosir').value = p.min_grosir || '';
     document.getElementById('edit-stock').value = p.stock;
@@ -2183,6 +2321,7 @@ function saveEdit() {
     var price = parseInt(document.getElementById('edit-price').value);
     var stock = parseInt(document.getElementById('edit-stock').value);
     var barcode = document.getElementById('edit-barcode').value.trim();
+    var hpp = parseInt(document.getElementById('edit-hpp').value) || 0;
     if (!name || isNaN(price) || isNaN(stock)) { showToast('Lengkapi semua data!', 'error'); return; }
     var data = { name: name, price: price, stock: stock };
     if (barcode) data.barcode = barcode; else data.barcode = null;
@@ -2190,6 +2329,7 @@ function saveEdit() {
     var mg = parseInt(document.getElementById('edit-min-grosir').value) || 0;
     data.harga_grosir = hg > 0 ? hg : null;
     data.min_grosir = mg > 0 ? mg : null;
+    data.hpp = hpp > 0 ? hpp : null;
     if (editImageData) data.image = editImageData; else data.image = null;
     productsRef.child(id).update(data).then(function() {
         showToast('✅ Produk diperbarui!', 'success');
@@ -2362,12 +2502,187 @@ productsRef.on('value', function(snapshot) {
     productsData = snapshot.val() || {};
     var role = localStorage.getItem('appRole');
     if (role === 'gudang') renderStockGudang();
+    updateLowStockBadge();
 });
 
 pelangganRef.on('value', function(snapshot) {
     pelangganData = snapshot.val() || {};
     loadPelangganDropdown();
 });
+
+// ========== LOW STOCK NOTIFICATION ==========
+var LOW_STOCK_THRESHOLD = 5;
+
+function updateLowStockBadge() {
+    var badge = document.getElementById('low-stock-badge');
+    var countEl = document.getElementById('low-stock-count');
+    if (!badge) return;
+
+    var lowItems = Object.values(productsData).filter(function(p) {
+        return p.stock <= LOW_STOCK_THRESHOLD;
+    });
+
+    if (lowItems.length === 0) {
+        badge.style.display = 'none';
+    } else {
+        badge.style.display = 'inline-flex';
+        countEl.textContent = lowItems.length;
+        var hasEmpty = lowItems.some(function(p) { return p.stock === 0; });
+        badge.className = 'low-stock-badge' + (hasEmpty ? ' urgent' : '');
+        badge.innerHTML = (hasEmpty ? '🚨' : '⚠') + ' <span id="low-stock-count">' + lowItems.length + '</span> Menipis';
+        badge.onclick = toggleLowStockPanel;
+    }
+
+    // Update panel list
+    var list = document.getElementById('low-stock-items-list');
+    if (!list) return;
+    list.innerHTML = '';
+    lowItems.sort(function(a,b){return a.stock - b.stock;}).forEach(function(p) {
+        var cls = p.stock === 0 ? 'low-stock-item out' : 'low-stock-item';
+        var icon = p.stock === 0 ? '🚫' : '⚠';
+        var span = document.createElement('span');
+        span.className = cls;
+        span.innerHTML = icon + ' <b>' + p.name + '</b>: <b>' + p.stock + '</b> pcs';
+        list.appendChild(span);
+    });
+}
+
+function toggleLowStockPanel() {
+    var panel = document.getElementById('low-stock-panel');
+    if (panel) panel.classList.toggle('show');
+}
+
+// ========== HOLD TRANSAKSI ==========
+function holdTransaksi() {
+    if (cart.length === 0) { showToast('Keranjang kosong!', 'error'); return; }
+    var holds = JSON.parse(localStorage.getItem('holdCarts') || '[]');
+    var label = cart.map(function(c){ return c.name.split(' ')[0]; }).join(', ');
+    var now = new Date();
+    var timeStr = now.getHours() + ':' + now.getMinutes().toString().padStart(2,'0');
+    holds.push({
+        cart: cart,
+        pelangganId: activePelangganId,
+        label: timeStr + ' · ' + label,
+        ts: Date.now()
+    });
+    if (holds.length > 5) holds.shift(); // max 5 hold
+    localStorage.setItem('holdCarts', JSON.stringify(holds));
+    cart = [];
+    renderCart();
+    updateHoldSlots();
+    showToast('⏸ Transaksi ditahan!', 'success');
+}
+
+function loadHold(idx) {
+    if (!idx && idx !== 0) return;
+    idx = parseInt(idx);
+    var holds = JSON.parse(localStorage.getItem('holdCarts') || '[]');
+    if (!holds[idx]) return;
+    if (cart.length > 0 && !confirm('Keranjang saat ini akan diganti. Lanjutkan?')) return;
+    cart = holds[idx].cart;
+    var pelId = holds[idx].pelangganId;
+    var sel = document.getElementById('kasir-pelanggan');
+    if (sel && pelId) { sel.value = pelId; onPelangganChange(); }
+    holds.splice(idx, 1);
+    localStorage.setItem('holdCarts', JSON.stringify(holds));
+    renderCart();
+    updateHoldSlots();
+    document.getElementById('hold-slot-select').value = '';
+    showToast('▶ Transaksi dipulihkan!', 'success');
+}
+
+function updateHoldSlots() {
+    var sel = document.getElementById('hold-slot-select');
+    var badge = document.getElementById('hold-count-badge');
+    if (!sel) return;
+    var holds = JSON.parse(localStorage.getItem('holdCarts') || '[]');
+    sel.innerHTML = '<option value="">— Pulihkan transaksi ditahan —</option>';
+    holds.forEach(function(h, i) {
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = '⏸ ' + h.label;
+        sel.appendChild(opt);
+    });
+    if (badge) {
+        if (holds.length > 0) {
+            badge.textContent = holds.length;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// Call on load
+updateHoldSlots();
+
+// ========== SUCCESS MODAL & WA SHARE ==========
+var _lastStrukData = null;
+
+function showSuccessModal(trxId, items, total, totalQty, totalHemat, kembalian, uangBayar, d) {
+    _lastStrukData = { trxId, items, total, totalQty, totalHemat, kembalian, uangBayar, d };
+    document.getElementById('success-total-display').textContent = 'Rp ' + total.toLocaleString('id-ID');
+    var pelNama = activePelangganId && pelangganData[activePelangganId] ? pelangganData[activePelangganId].nama : '';
+    var sub = items.length + ' produk · ' + totalQty + ' pcs';
+    if (pelNama) sub += ' · ' + pelNama;
+    document.getElementById('success-sub-text').textContent = sub;
+    document.getElementById('success-modal').classList.remove('hidden');
+}
+
+function closeSuccessModal() {
+    document.getElementById('success-modal').classList.add('hidden');
+    _lastStrukData = null;
+}
+
+function doCetakStruk() {
+    if (!_lastStrukData) return;
+    var d = _lastStrukData;
+    cetakStruk(d.trxId, d.items, d.total, d.totalQty, d.totalHemat, d.kembalian, d.uangBayar, d.d);
+    closeSuccessModal();
+}
+
+function shareWA() {
+    if (!_lastStrukData) return;
+    var d = _lastStrukData;
+    var pad = function(n) { return n.toString().padStart(2,'0'); };
+    var tgl = pad(d.d.getDate()) + '/' + pad(d.d.getMonth()+1) + '/' + d.d.getFullYear();
+    var jam = pad(d.d.getHours()) + ':' + pad(d.d.getMinutes());
+    var noStruk = d.trxId ? d.trxId.slice(-8).toUpperCase() : '--------';
+    var pelNama = activePelangganId && pelangganData[activePelangganId] ? pelangganData[activePelangganId].nama : 'Umum';
+
+    var lines = [];
+    lines.push('🧾 *STRUK PEMBELIAN*');
+    lines.push('📅 ' + tgl + ' ' + jam);
+    lines.push('🆔 #' + noStruk);
+    lines.push('👤 ' + pelNama);
+    lines.push('─'.repeat(28));
+    d.items.forEach(function(item, i) {
+        if (item.grosir_qty > 0 && item.normal_qty > 0) {
+            lines.push((i+1) + '. ' + item.name + ' [GROSIR]');
+            lines.push('   ' + item.grosir_qty + ' × Rp ' + item.harga_grosir.toLocaleString('id-ID') + ' = Rp ' + (item.grosir_qty * item.harga_grosir).toLocaleString('id-ID'));
+            lines.push('   ' + item.normal_qty + ' × Rp ' + item.harga_normal.toLocaleString('id-ID') + ' = Rp ' + (item.normal_qty * item.harga_normal).toLocaleString('id-ID'));
+        } else {
+            var harga = item.grosir_qty > 0 ? item.harga_grosir : item.harga_normal;
+            lines.push((i+1) + '. ' + item.name + (item.grosir_qty > 0 ? ' [GROSIR]' : ''));
+            lines.push('   ' + item.qty + ' × Rp ' + harga.toLocaleString('id-ID') + ' = Rp ' + item.subtotal.toLocaleString('id-ID'));
+        }
+    });
+    lines.push('─'.repeat(28));
+    lines.push('💰 *TOTAL: Rp ' + d.total.toLocaleString('id-ID') + '*');
+    if (activePayMethod === 'Tunai') {
+        lines.push('💵 Bayar: Rp ' + d.uangBayar.toLocaleString('id-ID'));
+        lines.push('🔄 Kembali: Rp ' + d.kembalian.toLocaleString('id-ID'));
+    } else {
+        lines.push('💳 Metode: ' + activePayMethod);
+    }
+    if (d.totalHemat > 0) lines.push('🎉 Hemat: Rp ' + d.totalHemat.toLocaleString('id-ID'));
+    lines.push('─'.repeat(28));
+    lines.push('✨ Terima kasih! Belanja lagi ya 🛍️');
+
+    var msg = lines.join('\n');
+    var url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+    window.open(url, '_blank');
+}
 </script>
 </body>
 </html>

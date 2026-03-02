@@ -126,6 +126,7 @@
     <span class="topbar-title">📊 Rekap Penjualan</span>
     <a href="index.html" class="nav-link">🏪 Kasir</a>
     <a href="pelanggan.html" class="nav-link">👥 Pelanggan</a>
+    <a href="riwayat.html" class="nav-link">📋 Riwayat</a>
     <a href="rekap.html" class="nav-link active">📊 Rekap</a>
 </div>
 
@@ -159,6 +160,7 @@
     <div class="summary-chips">
         <div class="chip chip-blue" id="chip-transaksi">0 Transaksi</div>
         <div class="chip chip-green" id="chip-omzet">Rp 0</div>
+        <div class="chip" id="chip-laba" style="background:#d3f9d8; color: #0ca678; display:none;">Laba Rp 0</div>
     </div>
 </div>
 
@@ -174,8 +176,9 @@
 
 <script>
 // ====== INIT ======
-var db, transaksiRef;
+var db, transaksiRef, productsRef;
 var allTransaksi = {};
+var allProducts = {};
 var mode = 'bulanan'; // 'bulanan' | 'tahunan'
 
 var BULAN_NAMA = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -184,6 +187,10 @@ try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
     transaksiRef = db.ref('transaksi');
+    productsRef = db.ref('products');
+    productsRef.on('value', function(snap) {
+        allProducts = snap.val() || {};
+    });
     transaksiRef.on('value', function(snap) {
         allTransaksi = snap.val() || {};
         populateTahun();
@@ -240,23 +247,40 @@ function render() {
     });
 
     // Aggregate per item
-    var map = {}; // { name: { qty, omzet } }
+    var map = {}; // { name: { qty, omzet, laba } }
     filtered.forEach(function(t) {
         if (!t.items) return;
         t.items.forEach(function(item) {
             var key = item.name;
-            if (!map[key]) map[key] = { name: key, qty: 0, omzet: 0 };
+            if (!map[key]) map[key] = { name: key, qty: 0, omzet: 0, laba: 0, hasHpp: false };
             map[key].qty   += item.qty || 0;
             map[key].omzet += item.subtotal || 0;
+            // Cari HPP dari products data
+            if (item.product_id && allProducts[item.product_id] && allProducts[item.product_id].hpp) {
+                var hpp = allProducts[item.product_id].hpp;
+                map[key].laba += (item.subtotal || 0) - (hpp * (item.qty || 0));
+                map[key].hasHpp = true;
+            }
         });
     });
 
     var rows = Object.values(map).sort(function(a,b) { return b.qty - a.qty; });
     var totalOmzet = filtered.reduce(function(s,t){return s+(t.total||0);}, 0);
+    var totalLaba = rows.reduce(function(s,r){return s+r.laba;}, 0);
+    var anyHpp = rows.some(function(r){return r.hasHpp;});
 
     // Summary chips
     document.getElementById('chip-transaksi').textContent = filtered.length + ' Transaksi';
     document.getElementById('chip-omzet').textContent = 'Rp ' + totalOmzet.toLocaleString('id-ID');
+    var labaChip = document.getElementById('chip-laba');
+    if (anyHpp) {
+        labaChip.style.display = '';
+        labaChip.textContent = 'Laba ≈ Rp ' + totalLaba.toLocaleString('id-ID');
+        labaChip.style.background = totalLaba >= 0 ? '#d3f9d8' : '#ffe3e3';
+        labaChip.style.color = totalLaba >= 0 ? '#0ca678' : '#f03e3e';
+    } else {
+        labaChip.style.display = 'none';
+    }
 
     var judul = mode === 'tahunan'
         ? 'Rekap Tahunan — ' + tahun
@@ -278,6 +302,7 @@ function render() {
         '<th>Nama Produk</th>' +
         '<th class="right">Qty Terjual</th>' +
         '<th class="right">Omzet</th>' +
+        (anyHpp ? '<th class="right">Laba Kotor</th>' : '') +
         '<th class="td-bar">Proporsi</th>' +
         '</tr></thead><tbody>';
 
@@ -287,12 +312,22 @@ function render() {
         var barClass  = rank === 1 ? 'top1' : rank === 2 ? 'top2' : rank === 3 ? 'top3' : '';
         var pct = Math.round((row.qty / maxQty) * 100);
         var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+        var labaCell = '';
+        if (anyHpp) {
+            if (row.hasHpp) {
+                var labaColor = row.laba >= 0 ? 'color:#0ca678;' : 'color:#f03e3e;';
+                labaCell = '<td class="td-omzet" style="' + labaColor + '">Rp ' + row.laba.toLocaleString('id-ID') + '</td>';
+            } else {
+                labaCell = '<td class="td-omzet" style="color:#c0c8d8;">—</td>';
+            }
+        }
         html +=
             '<tr>' +
             '<td class="td-rank ' + rankClass + '">' + medal + '</td>' +
             '<td class="td-name">' + escHtml(row.name) + '</td>' +
             '<td class="td-qty">' + row.qty.toLocaleString('id-ID') + ' pcs</td>' +
             '<td class="td-omzet">Rp ' + row.omzet.toLocaleString('id-ID') + '</td>' +
+            labaCell +
             '<td class="td-bar"><div class="bar-wrap"><div class="bar-fill ' + barClass + '" style="width:' + pct + '%"></div></div></td>' +
             '</tr>';
     });
