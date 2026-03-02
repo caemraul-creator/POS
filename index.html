@@ -1307,6 +1307,41 @@
                         <span id="kembalian-val" style="font-family:'DM Mono',monospace; font-weight:700; color:var(--green);">Rp 0</span>
                     </div>
                 </div>
+                <!-- Transfer: pilih bank -->
+                <div id="transfer-wrap" style="display:none; margin-bottom:10px;">
+                    <div style="font-size:11px; color:var(--ink3); font-weight:600; margin-bottom:4px;">BANK TUJUAN</div>
+                    <select id="transfer-bank" style="width:100%; padding:9px 12px; border:1.5px solid var(--border); border-radius:9px; font-family:'DM Sans',sans-serif; font-size:14px; color:var(--ink); background:var(--bg); outline:none;">
+                        <option value="BCA">🏦 BCA</option>
+                        <option value="Mandiri">🏦 Mandiri</option>
+                        <option value="BNI">🏦 BNI</option>
+                        <option value="BRI">🏦 BRI</option>
+                        <option value="BSI">🏦 BSI</option>
+                        <option value="CIMB">🏦 CIMB Niaga</option>
+                        <option value="Danamon">🏦 Danamon</option>
+                        <option value="Lainnya">🏦 Lainnya</option>
+                    </select>
+                </div>
+                <!-- Kartu: bank + 4 digit terakhir -->
+                <div id="kartu-wrap" style="display:none; margin-bottom:10px;">
+                    <div style="font-size:11px; color:var(--ink3); font-weight:600; margin-bottom:4px;">BANK KARTU</div>
+                    <select id="kartu-bank" style="width:100%; padding:9px 12px; border:1.5px solid var(--border); border-radius:9px; font-family:'DM Sans',sans-serif; font-size:14px; color:var(--ink); background:var(--bg); outline:none; margin-bottom:8px;">
+                        <option value="BCA">💳 BCA</option>
+                        <option value="Mandiri">💳 Mandiri</option>
+                        <option value="BNI">💳 BNI</option>
+                        <option value="BRI">💳 BRI</option>
+                        <option value="BSI">💳 BSI</option>
+                        <option value="CIMB">💳 CIMB Niaga</option>
+                        <option value="VISA">💳 VISA</option>
+                        <option value="Mastercard">💳 Mastercard</option>
+                        <option value="Lainnya">💳 Lainnya</option>
+                    </select>
+                    <div style="font-size:11px; color:var(--ink3); font-weight:600; margin-bottom:4px;">4 DIGIT TERAKHIR KARTU</div>
+                    <input type="text" inputmode="numeric" id="kartu-nomor" placeholder="xxxx" maxlength="4"
+                        style="width:100%; padding:9px 12px; border:1.5px solid var(--border); border-radius:9px;
+                        font-family:'DM Mono',monospace; font-size:18px; font-weight:700; color:var(--ink);
+                        background:var(--bg); outline:none; letter-spacing:6px; text-align:center;"
+                        oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
+                </div>
             </div>
             <div class="hold-bar">
                 <button class="hold-btn" onclick="holdTransaksi()">⏸ Tahan <span id="hold-count-badge" class="hold-count-badge" style="display:none;">0</span></button>
@@ -1333,7 +1368,7 @@
                 <span id="low-stock-badge" class="low-stock-badge" onclick="toggleLowStockPanel()" style="display:none;">
                     ⚠ <span id="low-stock-count">0</span> Menipis
                 </span>
-                <button onclick="switchToKasir()" style="padding:7px 14px; background:#e6fcf5; color:#0ca678; border-radius:8px; font-size:13px; font-weight:700; border:1.5px solid #96f2d7; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s;" onmouseover="this.style.background='#0ca678';this.style.color='#fff';" onmouseout="this.style.background='#e6fcf5';this.style.color='#0ca678';">🏪 Kasir</button>
+                <button onclick="switchToKasir()" style="padding:7px 14px; background:#e6fcf5; color:#0ca678; border-radius:8px; font-size:13px; font-weight:700; border:1.5px solid #96f2d7; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s;" onmouseover="this.style.background='#0ca678';this.style.color='#fff';" onmouseout="this.style.background='#e6fcf5';this.style.color='#0ca678';">🏪 Ke Kasir</button>
                 <a href="riwayat.html" style="padding:7px 14px; background:rgba(59,91,219,0.12); color:var(--accent); border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; border:1px solid rgba(59,91,219,0.25);">📋 Riwayat</a>
                 <a href="rekap.html" style="padding:7px 14px; background:#fff3bf; color:#b07d00; border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; border:1px solid #ffe066;">📊 Rekap</a>
                 <button class="exit-btn" onclick="resetRole()">Keluar</button>
@@ -1928,8 +1963,9 @@ function selectPayMethod(btn) {
     document.querySelectorAll('.pay-method-btn').forEach(function(b) { b.classList.remove('active'); });
     btn.classList.add('active');
     activePayMethod = btn.dataset.m;
-    var wrap = document.getElementById('uang-bayar-wrap');
-    if (wrap) wrap.style.display = activePayMethod === 'Tunai' ? 'block' : 'none';
+    document.getElementById('uang-bayar-wrap').style.display  = activePayMethod === 'Tunai'    ? 'block' : 'none';
+    document.getElementById('transfer-wrap').style.display    = activePayMethod === 'Transfer' ? 'block' : 'none';
+    document.getElementById('kartu-wrap').style.display       = activePayMethod === 'Kartu'    ? 'block' : 'none';
     if (activePayMethod !== 'Tunai') {
         document.getElementById('kembalian-val').textContent = 'Rp 0';
     }
@@ -2014,6 +2050,14 @@ async function processPayment() {
         metode_bayar: activePayMethod,
         uang_bayar: uangBayar, kembalian: kembalian
     };
+    if (activePayMethod === 'Transfer') {
+        trx.bank = document.getElementById('transfer-bank').value;
+    }
+    if (activePayMethod === 'Kartu') {
+        trx.bank = document.getElementById('kartu-bank').value;
+        var noKartu = document.getElementById('kartu-nomor').value.trim();
+        if (noKartu) trx.no_kartu = noKartu;
+    }
     if (activePelangganId) {
         trx.pelanggan_id   = activePelangganId;
         trx.pelanggan_nama = pelangganData[activePelangganId] ? pelangganData[activePelangganId].nama : '';
@@ -2097,16 +2141,28 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
             '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">KEMBALI</td>' +
             '<td style="font-size:12px;text-align:center;font-weight:900;">=</td>' +
             '<td style="font-size:12px;text-align:right;font-weight:900;">Rp ' + kembalian.toLocaleString('id-ID') + '</td></tr>';
+    } else if (activePayMethod === 'Transfer') {
+        var bank = document.getElementById('transfer-bank').value;
+        metodeBayarRows =
+            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">TRANSFER</td>' +
+            '<td style="font-size:12px;text-align:center;font-weight:800;">=</td>' +
+            '<td style="font-size:12px;text-align:right;font-weight:800;">Rp ' + total.toLocaleString('id-ID') + '</td></tr>' +
+            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">BANK</td>' +
+            '<td></td><td style="font-size:12px;text-align:right;font-weight:700;">' + bank + '</td></tr>';
+    } else if (activePayMethod === 'Kartu') {
+        var bankKartu = document.getElementById('kartu-bank').value;
+        var noKartu = document.getElementById('kartu-nomor').value.trim();
+        metodeBayarRows =
+            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">KARTU</td>' +
+            '<td style="font-size:12px;text-align:center;font-weight:800;">=</td>' +
+            '<td style="font-size:12px;text-align:right;font-weight:800;">Rp ' + total.toLocaleString('id-ID') + '</td></tr>' +
+            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">BANK</td>' +
+            '<td></td><td style="font-size:12px;text-align:right;font-weight:700;">' + bankKartu + '</td></tr>';
     } else {
         metodeBayarRows =
             '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">NET ' + activePayMethod.toUpperCase() + '</td>' +
             '<td style="font-size:12px;text-align:center;font-weight:800;">=</td>' +
-            '<td style="font-size:12px;text-align:right;font-weight:800;">Rp ' + total.toLocaleString('id-ID') + '</td></tr>' +
-            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">NAMA CARD</td>' +
-            '<td></td><td style="font-size:12px;text-align:right;">' + activePayMethod.toUpperCase() + '</td></tr>' +
-            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">KEMBALI</td>' +
-            '<td style="font-size:12px;text-align:center;">=</td>' +
-            '<td style="font-size:12px;text-align:right;">Rp 0</td></tr>';
+            '<td style="font-size:12px;text-align:right;font-weight:800;">Rp ' + total.toLocaleString('id-ID') + '</td></tr>';
     }
 
     var hematRow = totalHemat > 0
@@ -2752,8 +2808,15 @@ function shareWA() {
     if (activePayMethod === 'Tunai') {
         lines.push('💵 Bayar: Rp ' + d.uangBayar.toLocaleString('id-ID'));
         lines.push('🔄 Kembali: Rp ' + d.kembalian.toLocaleString('id-ID'));
+    } else if (activePayMethod === 'Transfer') {
+        var waBank = document.getElementById('transfer-bank').value;
+        lines.push('🏦 Transfer · ' + waBank);
+    } else if (activePayMethod === 'Kartu') {
+        var waBankKartu = document.getElementById('kartu-bank').value;
+        var waNoKartu = document.getElementById('kartu-nomor').value.trim();
+        lines.push('💳 Kartu · ' + waBankKartu + (waNoKartu ? ' (*' + waNoKartu + ')' : ''));
     } else {
-        lines.push('💳 Metode: ' + activePayMethod);
+        lines.push('📱 ' + activePayMethod);
     }
     if (d.totalHemat > 0) lines.push('🎉 Hemat: Rp ' + d.totalHemat.toLocaleString('id-ID'));
     lines.push('─'.repeat(28));
