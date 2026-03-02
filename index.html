@@ -2577,16 +2577,19 @@ function toggleLowStockPanel() {
 function holdTransaksi() {
     if (cart.length === 0) { showToast('Keranjang kosong!', 'error'); return; }
     var holds = JSON.parse(localStorage.getItem('holdCarts') || '[]');
-    var label = cart.map(function(c){ return c.name.split(' ')[0]; }).join(', ');
+    var itemLabel = cart.map(function(c){ return c.name.split(' ')[0]; }).join(', ');
     var now = new Date();
     var timeStr = now.getHours() + ':' + now.getMinutes().toString().padStart(2,'0');
+    var pelNama = activePelangganId && pelangganData[activePelangganId]
+        ? pelangganData[activePelangganId].nama
+        : 'Umum';
     holds.push({
         cart: cart,
         pelangganId: activePelangganId,
-        label: timeStr + ' · ' + label,
+        label: timeStr + ' · ' + pelNama + ' — ' + itemLabel,
         ts: Date.now()
     });
-    if (holds.length > 5) holds.shift(); // max 5 hold
+    if (holds.length > 5) holds.shift();
     localStorage.setItem('holdCarts', JSON.stringify(holds));
     cart = [];
     renderCart();
