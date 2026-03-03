@@ -391,12 +391,30 @@ function showDetail(id) {
         '</div>' +
         '</div>' +
         '<div class="action-row">' +
+        '<button class="btn-del-detail" onclick="deleteTransaksi(\'' + id + '\')" title="Hapus Transaksi">🗑 Hapus</button>' +
         '<button class="btn-wa-detail" onclick="shareWADetail(\'' + id + '\')">' +
         '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:5px;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.104.546 4.08 1.502 5.797L.057 23.716a.5.5 0 00.614.62l5.984-1.427A11.956 11.956 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.916 0-3.713-.5-5.267-1.375l-.377-.22-3.906.931.958-3.802-.239-.386A10 10 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>' +
         'Kirim WA' +
         '</button>' +
         '<button class="btn-print-detail" onclick="printDetail(\'' + id + '\')">🖨 Print Struk</button>' +
         '</div>';
+}
+
+function deleteTransaksi(id) {
+    var noStruk = id.slice(-8).toUpperCase();
+    if (!confirm('Hapus transaksi #' + noStruk + '?\nData stok TIDAK otomatis kembali.')) return;
+    transaksiRef.child(id).remove().then(function() {
+        activeId = null;
+        document.getElementById('detail-panel').innerHTML = '<div class="detail-empty"><div class="icon">✅</div><p>Transaksi berhasil dihapus</p></div>';
+        // Toast
+        var t = document.createElement('div');
+        t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#f03e3e;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+        t.textContent = 'Transaksi #' + noStruk + ' dihapus';
+        document.body.appendChild(t);
+        setTimeout(function(){ t.remove(); }, 3000);
+    }).catch(function(e) {
+        alert('Gagal hapus: ' + e.message);
+    });
 }
 
 function shareWADetail(id) {
@@ -479,7 +497,7 @@ function printDetail(id) {
 
     var win = window.open('', '_blank', 'width=380,height=650,scrollbars=yes');
     win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk #' + noStruk + '</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:"Courier New",Courier,monospace;width:280px;margin:0 auto;padding:14px 6px;font-size:12px;color:#000;background:#fff;}.toko-nama{text-align:center;font-size:15px;font-weight:900;letter-spacing:1px;margin-bottom:2px;}.toko-sub{text-align:center;font-size:10px;color:#555;margin-bottom:6px;}hr.dash2{border:none;margin:5px 0;height:4px;background:none;border-top:1px dashed #000;border-bottom:1px dashed #000;}hr.dot{border:none;border-top:1px dotted #000;margin:5px 0;}table{width:100%;border-collapse:collapse;}.footer-center{text-align:center;font-size:14px;font-weight:900;letter-spacing:3px;margin:8px 0 3px;}.trx-id{text-align:center;font-size:10px;color:#555;}@media print{body{width:280px;padding:4px;}@page{margin:0;size:80mm auto;}}</style></head><body>');
-    win.document.write('<div class="toko-nama">TOKO ANDA</div><div class="toko-sub">Kudus, Jawa Tengah</div>' + pelLine + '<hr class="dash2"><table><colgroup><col style="width:auto"><col style="width:40px"><col style="width:80px"></colgroup>' + itemRows + '<tr><td colspan="3" style="padding:2px 0;"><hr style="border:none;border-top:1px dashed #000;margin:0;"></td></tr><tr><td style="font-size:12px;font-weight:700;">TOTAL QTY</td><td style="text-align:center;">=</td><td style="text-align:right;font-weight:700;">' + totalQty + '</td></tr><tr><td style="font-size:12px;font-weight:900;">TOTAL</td><td style="text-align:center;font-weight:900;">=</td><td style="text-align:right;font-weight:900;">Rp ' + (t.total||0).toLocaleString('id-ID') + '</td></tr>' + metodeRows + '</table><hr class="dot"><div class="footer-center">TERIMA KASIH</div><div class="trx-id">' + tglStr + '/' + noStruk + '</div></body></html>');
+    win.document.write('<div class="toko-nama">' + (tokoConfig.nama||'TOKO ANDA') + '</div><div class="toko-sub">' + (tokoConfig.alamat||'') + (tokoConfig.telepon ? ' · Telp: '+tokoConfig.telepon : '') + '</div>' + pelLine + '<hr class="dash2"><table><colgroup><col style="width:auto"><col style="width:40px"><col style="width:80px"></colgroup>' + itemRows + '<tr><td colspan="3" style="padding:2px 0;"><hr style="border:none;border-top:1px dashed #000;margin:0;"></td></tr><tr><td style="font-size:12px;font-weight:700;">TOTAL QTY</td><td style="text-align:center;">=</td><td style="text-align:right;font-weight:700;">' + totalQty + '</td></tr><tr><td style="font-size:12px;font-weight:900;">TOTAL</td><td style="text-align:center;font-weight:900;">=</td><td style="text-align:right;font-weight:900;">Rp ' + (t.total||0).toLocaleString('id-ID') + '</td></tr>' + metodeRows + '</table><hr class="dot">' + '<div class="footer-center">' + (tokoConfig.footer||'TERIMA KASIH').toUpperCase() + '</div>' + '<div class="trx-id">' + tglStr + '/' + noStruk + '</div></body></html>');
     win.document.close();
     win.focus();
     setTimeout(function(){ win.print(); }, 500);

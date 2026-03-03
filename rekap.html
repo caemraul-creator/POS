@@ -161,6 +161,7 @@
         <div class="chip chip-blue" id="chip-transaksi">0 Transaksi</div>
         <div class="chip chip-green" id="chip-omzet">Rp 0</div>
         <div class="chip" id="chip-laba" style="background:#d3f9d8; color: #0ca678; display:none;">Laba Rp 0</div>
+        <button onclick="printRekap()" style="padding:6px 16px; background:var(--accent); color:#fff; border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">🖨 Export/Print</button>
     </div>
 </div>
 
@@ -338,6 +339,107 @@ function render() {
 
 function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function printRekap() {
+    var tahun = parseInt(document.getElementById('sel-tahun').value);
+    var bulan = parseInt(document.getElementById('sel-bulan').value);
+
+    var filtered = Object.values(allTransaksi).filter(function(t) {
+        var tTahun = t.tahun || (t.timestamp ? new Date(t.timestamp).getFullYear() : null);
+        var tBulan = t.bulan || (t.timestamp ? new Date(t.timestamp).getMonth() + 1 : null);
+        if (mode === 'tahunan') return tTahun === tahun;
+        return tTahun === tahun && tBulan === bulan;
+    });
+
+    var map = {};
+    filtered.forEach(function(t) {
+        if (!t.items) return;
+        t.items.forEach(function(item) {
+            var key = item.name;
+            if (!map[key]) map[key] = { name: key, qty: 0, omzet: 0, laba: 0, hasHpp: false };
+            map[key].qty   += item.qty || 0;
+            map[key].omzet += item.subtotal || 0;
+            if (item.product_id && allProducts[item.product_id] && allProducts[item.product_id].hpp) {
+                var hpp = allProducts[item.product_id].hpp;
+                map[key].laba += (item.subtotal || 0) - (hpp * (item.qty || 0));
+                map[key].hasHpp = true;
+            }
+        });
+    });
+
+    var rows = Object.values(map).sort(function(a,b){ return b.qty - a.qty; });
+    var totalOmzet = filtered.reduce(function(s,t){ return s+(t.total||0); }, 0);
+    var totalLaba  = rows.reduce(function(s,r){ return s+r.laba; }, 0);
+    var anyHpp = rows.some(function(r){ return r.hasHpp; });
+    var judul = mode === 'tahunan' ? 'Rekap Tahunan ' + tahun : 'Rekap Bulanan ' + BULAN_NAMA[bulan] + ' ' + tahun;
+    var tokoNama = (tokoConfig && tokoConfig.nama) ? tokoConfig.nama : 'TOKO';
+    var tokoAlamat = (tokoConfig && tokoConfig.alamat) ? tokoConfig.alamat : '';
+    var now = new Date();
+    var printDate = now.getDate() + '/' + (now.getMonth()+1) + '/' + now.getFullYear();
+
+    var tableRows = '';
+    rows.forEach(function(row, i) {
+        var rank = i + 1;
+        var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+        var labaCell = anyHpp
+            ? (row.hasHpp
+                ? '<td style="text-align:right; color:' + (row.laba >= 0 ? '#0ca678' : '#f03e3e') + '; font-weight:700;">Rp ' + row.laba.toLocaleString('id-ID') + '</td>'
+                : '<td style="text-align:right; color:#ccc;">—</td>')
+            : '';
+        tableRows += '<tr style="border-bottom:1px solid #e4e7ef;">' +
+            '<td style="padding:10px 12px; font-size:14px;">' + medal + '</td>' +
+            '<td style="padding:10px 12px; font-weight:600;">' + escHtml(row.name) + '</td>' +
+            '<td style="padding:10px 12px; text-align:right; font-weight:700; font-family:monospace;">' + row.qty.toLocaleString('id-ID') + ' pcs</td>' +
+            '<td style="padding:10px 12px; text-align:right; font-family:monospace;">Rp ' + row.omzet.toLocaleString('id-ID') + '</td>' +
+            labaCell + '</tr>';
+    });
+
+    var labaHeader = anyHpp ? '<th style="background:#3b5bdb;color:#fff;padding:10px 12px;text-align:right;">Laba Kotor</th>' : '';
+    var labaFooter = anyHpp ? '<td style="text-align:right; font-weight:800; color:' + (totalLaba>=0?'#0ca678':'#f03e3e') + ';">Rp ' + totalLaba.toLocaleString('id-ID') + '</td>' : '';
+
+    var win = window.open('', '_blank', 'width=800,height=900');
+    win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + judul + '</title><style>' +
+        'body{font-family:"Segoe UI",sans-serif;margin:0;padding:28px;color:#0f1117;font-size:13px;}' +
+        '.header{border-bottom:3px solid #3b5bdb;padding-bottom:14px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end;}' +
+        '.header h1{margin:0 0 4px;font-size:22px;color:#3b5bdb;}.header p{margin:0;color:#666;font-size:12px;}' +
+        '.header-right{text-align:right;font-size:12px;color:#666;}' +
+        '.summary{display:flex;gap:14px;margin-bottom:20px;}' +
+        '.sum-card{flex:1;background:#f8f9fc;border:1px solid #e4e7ef;border-radius:8px;padding:12px 16px;}' +
+        '.sum-card .sl{font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:#8891a5;font-weight:700;margin-bottom:4px;}' +
+        '.sum-card .sv{font-size:18px;font-weight:800;color:#0f1117;}' +
+        'table{width:100%;border-collapse:collapse;}' +
+        'thead th{background:#3b5bdb;color:#fff;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;}' +
+        'tbody tr:nth-child(even){background:#f8f9fc;}' +
+        'tbody tr:hover{background:#eef2ff;}' +
+        '.footer-row{background:#eef2ff!important;font-weight:800;}' +
+        '.footer-bar{margin-top:24px;padding-top:12px;border-top:1px solid #e4e7ef;display:flex;justify-content:space-between;font-size:11px;color:#aaa;}' +
+        '@media print{body{padding:12px;}@page{margin:0.5cm;size:A4;}}' +
+        '</style></head><body>' +
+        '<div class="header"><div><h1>' + judul + '</h1><p>' + tokoNama + (tokoAlamat ? ' · ' + tokoAlamat : '') + '</p></div>' +
+        '<div class="header-right"><div style="font-size:11px;">Dicetak: ' + printDate + '</div><div style="font-size:11px;">' + filtered.length + ' transaksi</div></div></div>' +
+        '<div class="summary">' +
+        '<div class="sum-card"><div class="sl">Total Transaksi</div><div class="sv">' + filtered.length + 'x</div></div>' +
+        '<div class="sum-card"><div class="sl">Total Omzet</div><div class="sv">Rp ' + totalOmzet.toLocaleString('id-ID') + '</div></div>' +
+        (anyHpp ? '<div class="sum-card"><div class="sl">Estimasi Laba</div><div class="sv" style="color:' + (totalLaba>=0?'#0ca678':'#f03e3e') + ';">Rp ' + totalLaba.toLocaleString('id-ID') + '</div></div>' : '') +
+        '<div class="sum-card"><div class="sl">Produk Terjual</div><div class="sv">' + rows.length + ' jenis</div></div>' +
+        '</div>' +
+        '<table><thead><tr>' +
+        '<th style="background:#3b5bdb;color:#fff;padding:10px 12px;width:44px;">#</th>' +
+        '<th style="background:#3b5bdb;color:#fff;padding:10px 12px;">Nama Produk</th>' +
+        '<th style="background:#3b5bdb;color:#fff;padding:10px 12px;text-align:right;">Qty Terjual</th>' +
+        '<th style="background:#3b5bdb;color:#fff;padding:10px 12px;text-align:right;">Omzet</th>' +
+        labaHeader + '</tr></thead><tbody>' + tableRows +
+        '<tr class="footer-row"><td colspan="2" style="padding:10px 12px;text-align:right;">TOTAL</td>' +
+        '<td style="padding:10px 12px;text-align:right;font-family:monospace;">' + rows.reduce(function(s,r){return s+r.qty;},0).toLocaleString('id-ID') + ' pcs</td>' +
+        '<td style="padding:10px 12px;text-align:right;font-family:monospace;">Rp ' + totalOmzet.toLocaleString('id-ID') + '</td>' +
+        labaFooter + '</tr>' +
+        '</tbody></table>' +
+        '<div class="footer-bar"><span>' + judul + ' · ' + tokoNama + '</span><span>POS Pro · ' + printDate + '</span></div>' +
+        '</body></html>');
+    win.document.close();
+    win.focus();
+    setTimeout(function(){ win.print(); }, 400);
 }
 </script>
 </body>

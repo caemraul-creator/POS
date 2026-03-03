@@ -425,7 +425,7 @@
     <span class="topbar-logo">POS PRO</span>
     <span class="topbar-title">Manajemen Pelanggan</span>
     <div class="topbar-nav">
-        <a href="pos-gudang.html" class="nav-link">🏪 POS & Gudang</a>
+        <a href="index.html" class="nav-link">🏪 POS & Gudang</a>
         <a href="pelanggan.html" class="nav-link active">👥 Pelanggan</a>
     </div>
 </div>
@@ -1164,13 +1164,15 @@ function deletePelanggan(id) {
 pelangganRef.on('value', function(snap) {
     pelangganData = snap.val() || {};
     renderList();
-    if (activeId && pelangganData[activeId]) showDetail(activeId);
+    if (activeId === '__umum__') { /* umum tidak perlu refresh dari pelangganRef */ }
+    else if (activeId && pelangganData[activeId]) showDetail(activeId);
 });
 
 transaksiRef.on('value', function(snap) {
     transaksiData = snap.val() || {};
     renderList();
-    if (activeId) showDetail(activeId);
+    if (activeId === '__umum__') showDetailUmum();
+    else if (activeId && pelangganData[activeId]) showDetail(activeId);
 });
 </script>
 </body>

@@ -2190,8 +2190,8 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
 '.trx-id{text-align:center;font-size:10px;color:#555;}' +
 '@media print{body{width:280px;padding:4px;}@page{margin:0;size:80mm auto;}}' +
 '</style></head><body>' +
-'<div class="toko-nama">TOKO ANDA</div>' +
-'<div class="toko-sub">Kudus, Jawa Tengah</div>' +
+'<div class="toko-nama">' + (tokoConfig.nama || 'TOKO ANDA') + '</div>' +
+'<div class="toko-sub">' + (tokoConfig.alamat || '') + (tokoConfig.telepon ? ' · Telp: ' + tokoConfig.telepon : '') + '</div>' +
 pelLine +
 '<hr class="dash2">' +
 '<table>' +
@@ -2209,7 +2209,7 @@ metodeBayarRows +
 hematRow +
 '</table>' +
 '<hr class="dot">' +
-'<div class="footer-center">TERIMA KASIH</div>' +
+'<div class="footer-center">' + (tokoConfig.footer || 'TERIMA KASIH').toUpperCase() + '</div>' +
 '<div class="trx-id">' + tglStr + '/' + noStruk + '</div>' +
 '</body></html>'
     );
@@ -2519,8 +2519,6 @@ function closeScanner() {
     stopCamera();
 }
 
-var _refocusTimer = null;
-
 function startCamera() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         document.getElementById('scanner-result').textContent = '❌ Kamera tidak didukung di browser ini';
@@ -2529,8 +2527,10 @@ function startCamera() {
     var constraints = {
         video: {
             facingMode: { ideal: 'environment' },
-            width:  { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            focusMode: { ideal: 'continuous' },
+            advanced: [{ focusMode: 'continuous' }]
         }
     };
     navigator.mediaDevices.getUserMedia(constraints)
@@ -2540,12 +2540,17 @@ function startCamera() {
             video.srcObject = stream;
             video.play();
 
-            applyFocus(stream);
-
-            // Refocus otomatis setiap 3 detik agar tetap tajam
-            _refocusTimer = setInterval(function() {
-                if (scannerStream) applyFocus(scannerStream);
-            }, 3000);
+            // Aktifkan autofocus & torch jika didukung
+            var track = stream.getVideoTracks()[0];
+            if (track && track.applyConstraints) {
+                track.applyConstraints({
+                    advanced: [
+                        { focusMode: 'continuous' },
+                        { exposureMode: 'continuous' },
+                        { whiteBalanceMode: 'continuous' }
+                    ]
+                }).catch(function() {});
+            }
 
             startBarcodeDetection(video);
         })
@@ -2554,26 +2559,7 @@ function startCamera() {
         });
 }
 
-function applyFocus(stream) {
-    var track = stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
-    if (!track || !track.applyConstraints) return;
-
-    var caps = track.getCapabilities ? track.getCapabilities() : {};
-    var adv = {};
-    if (caps.focusMode && caps.focusMode.indexOf('continuous') !== -1)
-        adv.focusMode = 'continuous';
-    if (caps.exposureMode && caps.exposureMode.indexOf('continuous') !== -1)
-        adv.exposureMode = 'continuous';
-    if (caps.whiteBalanceMode && caps.whiteBalanceMode.indexOf('continuous') !== -1)
-        adv.whiteBalanceMode = 'continuous';
-
-    if (Object.keys(adv).length > 0) {
-        track.applyConstraints({ advanced: [adv] }).catch(function() {});
-    }
-}
-
 function stopCamera() {
-    if (_refocusTimer) { clearInterval(_refocusTimer); _refocusTimer = null; }
     if (scannerStream) {
         scannerStream.getTracks().forEach(function(t) { t.stop(); });
         scannerStream = null;
@@ -2857,7 +2843,7 @@ function shareWA() {
     }
     if (d.totalHemat > 0) lines.push('🎉 Hemat: Rp ' + d.totalHemat.toLocaleString('id-ID'));
     lines.push('─'.repeat(28));
-    lines.push('✨ Terima kasih! Belanja lagi ya 🛍️');
+    lines.push('✨ ' + (tokoConfig.footer || 'Terima kasih! Belanja lagi ya 🛍️'));
 
     var msg = lines.join('\n');
     var url = 'https://wa.me/?text=' + encodeURIComponent(msg);
