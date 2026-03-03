@@ -2519,6 +2519,8 @@ function closeScanner() {
     stopCamera();
 }
 
+var _refocusTimer = null;
+
 function startCamera() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         document.getElementById('scanner-result').textContent = '❌ Kamera tidak didukung di browser ini';
@@ -2527,10 +2529,8 @@ function startCamera() {
     var constraints = {
         video: {
             facingMode: { ideal: 'environment' },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-            focusMode: { ideal: 'continuous' },
-            advanced: [{ focusMode: 'continuous' }]
+            width:  { ideal: 1280 },
+            height: { ideal: 720 }
         }
     };
     navigator.mediaDevices.getUserMedia(constraints)
@@ -2540,17 +2540,12 @@ function startCamera() {
             video.srcObject = stream;
             video.play();
 
-            // Aktifkan autofocus & torch jika didukung
-            var track = stream.getVideoTracks()[0];
-            if (track && track.applyConstraints) {
-                track.applyConstraints({
-                    advanced: [
-                        { focusMode: 'continuous' },
-                        { exposureMode: 'continuous' },
-                        { whiteBalanceMode: 'continuous' }
-                    ]
-                }).catch(function() {});
-            }
+            applyFocus(stream);
+
+            // Refocus otomatis setiap 3 detik agar tetap tajam
+            _refocusTimer = setInterval(function() {
+                if (scannerStream) applyFocus(scannerStream);
+            }, 3000);
 
             startBarcodeDetection(video);
         })
@@ -2559,7 +2554,26 @@ function startCamera() {
         });
 }
 
+function applyFocus(stream) {
+    var track = stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+    if (!track || !track.applyConstraints) return;
+
+    var caps = track.getCapabilities ? track.getCapabilities() : {};
+    var adv = {};
+    if (caps.focusMode && caps.focusMode.indexOf('continuous') !== -1)
+        adv.focusMode = 'continuous';
+    if (caps.exposureMode && caps.exposureMode.indexOf('continuous') !== -1)
+        adv.exposureMode = 'continuous';
+    if (caps.whiteBalanceMode && caps.whiteBalanceMode.indexOf('continuous') !== -1)
+        adv.whiteBalanceMode = 'continuous';
+
+    if (Object.keys(adv).length > 0) {
+        track.applyConstraints({ advanced: [adv] }).catch(function() {});
+    }
+}
+
 function stopCamera() {
+    if (_refocusTimer) { clearInterval(_refocusTimer); _refocusTimer = null; }
     if (scannerStream) {
         scannerStream.getTracks().forEach(function(t) { t.stop(); });
         scannerStream = null;
