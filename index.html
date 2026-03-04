@@ -123,7 +123,7 @@
             align-items: center;
             gap: 6px;
             flex-shrink: 0;
-            flex-wrap: wrap;
+            overflow: hidden;
         }
 
         .topbar-title {
@@ -1463,11 +1463,11 @@
         <!-- Kiri: Form -->
         <div class="gudang-left">
             <div class="panel-topbar">
-                <span class="topbar-title">Gudang Pro</span>
-                <span class="topbar-tag tag-gudang">GUDANG</span>
+                <span class="topbar-tag tag-gudang" style="flex-shrink:0;">GUDANG</span>
                 <span id="low-stock-badge" class="low-stock-badge" onclick="toggleLowStockPanel()" style="display:none;">
                     ⚠ <span id="low-stock-count">0</span> Menipis
                 </span>
+                <div style="flex:1;"></div>
                 <button onclick="switchToKasir()" style="padding:5px 10px; background:#e6fcf5; color:#0ca678; border-radius:8px; font-size:12px; font-weight:700; border:1.5px solid #96f2d7; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; white-space:nowrap;" onmouseover="this.style.background='#0ca678';this.style.color='#fff';" onmouseout="this.style.background='#e6fcf5';this.style.color='#0ca678';">🏪 Kasir</button>
                 <a href="riwayat.html" style="padding:5px 10px; background:rgba(59,91,219,0.12); color:var(--accent); border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; border:1px solid rgba(59,91,219,0.25); white-space:nowrap;">📋 Riwayat</a>
                 <a href="rekap.html" style="padding:5px 10px; background:#fff3bf; color:#b07d00; border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; border:1px solid #ffe066; white-space:nowrap;">📊 Rekap</a>
