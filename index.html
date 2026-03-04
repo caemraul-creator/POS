@@ -2819,6 +2819,7 @@ function handleBarcode(code) {
 // ========== REALTIME LISTENER ==========
 productsRef.on('value', function(snapshot) {
     productsData = snapshot.val() || {};
+    try { localStorage.setItem('productsCache', JSON.stringify(productsData)); } catch(e) {}
     var role = localStorage.getItem('appRole');
     if (role === 'gudang') renderStockGudang();
     updateLowStockBadge();

@@ -394,9 +394,21 @@ function renderTable() {
 }
 
 // ===== FIREBASE LISTENER =====
+// Render from cache immediately for instant load
+try {
+    var cached = localStorage.getItem('productsCache');
+    if (cached) {
+        productsData = JSON.parse(cached);
+        renderSummary();
+        renderTable();
+    }
+} catch(e) {}
+
+// Then sync live from Firebase
 if (productsRef) {
     productsRef.on('value', function(snapshot) {
         productsData = snapshot.val() || {};
+        try { localStorage.setItem('productsCache', JSON.stringify(productsData)); } catch(e) {}
         renderSummary();
         renderTable();
     });
