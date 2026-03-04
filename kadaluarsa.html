@@ -166,7 +166,19 @@
 
         @media print {
             .topbar, .filter-bar, .legend, .back-btn, .print-btn, .search-wrap-exp, .sort-select { display: none !important; }
-            .summary-bar { padding: 12px 0 0; }
+            .summary-bar {
+                padding: 8px 0 0;
+                flex-wrap: nowrap !important;
+                gap: 6px;
+            }
+            .summary-card {
+                min-width: 0 !important;
+                flex: 1;
+                padding: 8px 10px;
+                border-radius: 8px;
+            }
+            .summary-card .sc-val { font-size: 18px; }
+            .summary-card .sc-label { font-size: 9px; }
             .table-wrap  { padding: 0; }
         }
     </style>
@@ -401,7 +413,6 @@ function renderTable() {
 }
 
 // ===== FIREBASE LISTENER =====
-// Render from cache immediately for instant load
 try {
     var cached = localStorage.getItem('productsCache');
     if (cached) {
@@ -411,7 +422,6 @@ try {
     }
 } catch(e) {}
 
-// Then sync live from Firebase
 if (productsRef) {
     productsRef.on('value', function(snapshot) {
         productsData = snapshot.val() || {};
