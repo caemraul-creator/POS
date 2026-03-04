@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Kadaluarsa — POS Gudang Pro</title>
+    <link rel="icon" href="data:,">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #0f1117; --ink2: #3d4350; --ink3: #8891a5; --border: #e4e7ef;
+            --bg: #f0f2f8; --surface: #ffffff; --accent: #3b5bdb; --accent2: #4c6ef5;
+            --green: #0ca678; --red: #f03e3e; --amber: #f59f00; --surface2: #f8f9fc;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+        /* ===== TOPBAR ===== */
+        .topbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: sticky; top: 0; z-index: 10;
+        }
+        .topbar-title { font-weight: 700; font-size: 17px; color: var(--ink); flex: 1; }
+        .topbar-sub { font-size: 13px; color: var(--ink3); font-weight: 400; margin-left: 8px; }
+        .back-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 14px; border: 1.5px solid var(--border);
+            border-radius: 8px; background: var(--surface); color: var(--ink2);
+            font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+            cursor: pointer; text-decoration: none; transition: background 0.15s;
+        }
+        .back-btn:hover { background: var(--bg); }
+
+        /* ===== SUMMARY CARDS ===== */
+        .summary-bar {
+            display: flex; gap: 14px; padding: 20px 24px 0; flex-wrap: wrap;
+        }
+        .summary-card {
+            background: var(--surface); border: 1.5px solid var(--border);
+            border-radius: 14px; padding: 16px 22px; min-width: 150px;
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        .summary-card .sc-val { font-size: 28px; font-weight: 700; font-family: 'DM Mono', monospace; }
+        .summary-card .sc-label { font-size: 12px; color: var(--ink3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .summary-card.danger .sc-val { color: var(--red); }
+        .summary-card.warn .sc-val   { color: var(--amber); }
+        .summary-card.ok .sc-val     { color: var(--green); }
+        .summary-card.total .sc-val  { color: var(--accent); }
+
+        /* ===== FILTER BAR ===== */
+        .filter-bar {
+            display: flex; gap: 10px; padding: 18px 24px 14px; align-items: center; flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 7px 16px; border-radius: 20px; border: 1.5px solid var(--border);
+            background: var(--surface); font-family: 'DM Sans', sans-serif;
+            font-size: 13px; font-weight: 600; cursor: pointer; color: var(--ink2);
+            transition: all 0.15s; white-space: nowrap;
+        }
+        .filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+        .filter-btn.f-expired.active  { background: var(--red); border-color: var(--red); }
+        .filter-btn.f-critical.active { background: #f76707; border-color: #f76707; }
+        .filter-btn.f-warning.active  { background: var(--amber); border-color: var(--amber); color: #fff; }
+        .filter-btn.f-ok.active       { background: var(--green); border-color: var(--green); }
+        .search-exp {
+            margin-left: auto; padding: 8px 14px 8px 36px; border: 1.5px solid var(--border);
+            border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+            background: var(--surface); outline: none; min-width: 200px; color: var(--ink);
+            transition: border-color 0.15s; position: relative;
+        }
+        .search-exp:focus { border-color: var(--accent); }
+        .search-wrap-exp { position: relative; }
+        .search-wrap-exp::before {
+            content: '🔍'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+            font-size: 14px; pointer-events: none;
+        }
+        .sort-select {
+            padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+            font-family: 'DM Sans', sans-serif; font-size: 13px; background: var(--surface);
+            color: var(--ink2); outline: none; cursor: pointer;
+        }
+
+        /* ===== TABLE ===== */
+        .table-wrap { padding: 0 24px 32px; overflow-x: auto; }
+        .exp-table {
+            width: 100%; border-collapse: collapse;
+            background: var(--surface); border-radius: 14px;
+            overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+        .exp-table thead th {
+            font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+            color: var(--ink3); font-weight: 700; padding: 12px 16px;
+            border-bottom: 2px solid var(--border); background: var(--surface2);
+            text-align: left; white-space: nowrap;
+        }
+        .exp-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+        .exp-table tbody tr:last-child { border-bottom: none; }
+        .exp-table tbody tr:hover { background: var(--surface2); }
+        .exp-table td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
+
+        .exp-table tr.row-expired  { background: #fff5f5; }
+        .exp-table tr.row-critical { background: #fff8f2; }
+        .exp-table tr.row-warning  { background: #fffdf0; }
+
+        .exp-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 12px; font-family: 'DM Mono', monospace; padding: 4px 10px;
+            border-radius: 6px; font-weight: 700; white-space: nowrap;
+        }
+        .exp-badge.expired  { background: #ffe3e3; color: var(--red); }
+        .exp-badge.critical { background: #ffe8d5; color: #e8590c; }
+        .exp-badge.warning  { background: #fff3bf; color: #b07d00; }
+        .exp-badge.ok       { background: #e6fcf5; color: var(--green); }
+        .exp-badge.none     { background: #f1f3f5; color: var(--ink3); }
+
+        .prod-name { font-weight: 600; color: var(--ink); }
+        .prod-meta { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+        .stock-pill {
+            display: inline-block; padding: 3px 9px; border-radius: 5px;
+            font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 600;
+        }
+        .stock-pill.empty { background: #ffe3e3; color: var(--red); }
+        .stock-pill.low   { background: #fff3bf; color: #b07d00; }
+        .stock-pill.ok    { background: #e6fcf5; color: var(--green); }
+
+        .days-bar-wrap { width: 120px; }
+        .days-bar {
+            height: 6px; border-radius: 3px; background: #e9ecef; margin-top: 4px; overflow: hidden;
+        }
+        .days-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+
+        .empty-state {
+            text-align: center; padding: 60px 20px;
+            color: var(--ink3); font-size: 14px;
+        }
+        .empty-state .big-icon { font-size: 48px; margin-bottom: 12px; }
+
+        /* ===== LEGEND ===== */
+        .legend {
+            display: flex; gap: 18px; padding: 0 24px 16px; flex-wrap: wrap;
+            font-size: 12px; color: var(--ink3);
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .legend-dot.expired  { background: var(--red); }
+        .legend-dot.critical { background: #f76707; }
+        .legend-dot.warning  { background: var(--amber); }
+        .legend-dot.ok       { background: var(--green); }
+
+        /* Loading state */
+        .loading { text-align: center; padding: 60px; color: var(--ink3); font-size: 14px; }
+
+        /* Print button */
+        .print-btn {
+            padding: 8px 16px; background: var(--surface2); border: 1.5px solid var(--border);
+            border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+            font-weight: 600; cursor: pointer; color: var(--ink2); transition: all 0.15s;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .print-btn:hover { background: var(--bg); }
+
+        @media print {
+            .topbar, .filter-bar, .legend, .back-btn, .print-btn, .search-wrap-exp, .sort-select { display: none !important; }
+            .summary-bar { padding: 12px 0 0; }
+            .table-wrap  { padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <a href="index.html" class="back-btn">← Kembali</a>
+    <span class="topbar-title">🗓 Monitor Kadaluarsa <span class="topbar-sub" id="update-time"></span></span>
+    <button class="print-btn" onclick="window.print()">🖨 Cetak</button>
+</div>
+
+<!-- SUMMARY CARDS -->
+<div class="summary-bar" id="summary-bar">
+    <div class="loading">⏳ Memuat data...</div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+    <span class="legend-item"><span class="legend-dot expired"></span> Sudah Kadaluarsa</span>
+    <span class="legend-item"><span class="legend-dot critical"></span> Kritis (≤ 7 hari)</span>
+    <span class="legend-item"><span class="legend-dot warning"></span> Peringatan (≤ 30 hari)</span>
+    <span class="legend-item"><span class="legend-dot ok"></span> Aman (&gt; 30 hari)</span>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+    <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">Semua</button>
+    <button class="filter-btn f-expired" data-filter="expired" onclick="setFilter('expired', this)">🚫 Kadaluarsa</button>
+    <button class="filter-btn f-critical" data-filter="critical" onclick="setFilter('critical', this)">⚠ Kritis (≤7 hari)</button>
+    <button class="filter-btn f-warning" data-filter="warning" onclick="setFilter('warning', this)">🟡 Peringatan (≤30 hari)</button>
+    <button class="filter-btn f-ok" data-filter="ok" onclick="setFilter('ok', this)">✅ Aman</button>
+    <button class="filter-btn" data-filter="none" onclick="setFilter('none', this)">— Tanpa Tgl</button>
+    <div class="search-wrap-exp">
+        <input class="search-exp" id="search-exp" type="text" placeholder="Cari nama produk..." oninput="renderTable()">
+    </div>
+    <select class="sort-select" id="sort-exp" onchange="renderTable()">
+        <option value="exp-asc">Urutkan: Paling Dekat Kadaluarsa</option>
+        <option value="exp-desc">Urutkan: Paling Jauh Kadaluarsa</option>
+        <option value="name">Urutkan: Nama A–Z</option>
+        <option value="stock">Urutkan: Stok Terkecil</option>
+    </select>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+    <table class="exp-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Nama Produk</th>
+                <th>Stok</th>
+                <th>Harga Jual</th>
+                <th>Tgl Kadaluarsa</th>
+                <th>Status</th>
+                <th>Sisa Hari</th>
+            </tr>
+        </thead>
+        <tbody id="exp-table-body">
+            <tr><td colspan="7" class="loading">⏳ Memuat data Firebase...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="config.js"></script>
+
+<script>
+// ===== FIREBASE INIT =====
+var db, productsRef;
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    productsRef = db.ref('products');
+} catch(e) {
+    document.getElementById('exp-table-body').innerHTML =
+        '<tr><td colspan="7" style="text-align:center;color:var(--red);padding:30px;">❌ Gagal terhubung Firebase: ' + e.message + '</td></tr>';
+}
+
+// ===== STATE =====
+var productsData = {};
+var activeFilter = 'all';
+
+// ===== HELPERS =====
+function getExpiryStatus(tglKadaluarsa) {
+    if (!tglKadaluarsa) return null;
+    var today = new Date(); today.setHours(0,0,0,0);
+    var exp = new Date(tglKadaluarsa);
+    var diffDays = Math.floor((exp - today) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0)   return { status: 'expired',  days: diffDays, label: 'KADALUARSA',           sub: Math.abs(diffDays) + ' hari lalu', cls: 'expired'  };
+    if (diffDays === 0) return { status: 'critical', days: 0,        label: 'Hari ini!',             sub: 'Hari terakhir',                    cls: 'critical' };
+    if (diffDays <= 7)  return { status: 'critical', days: diffDays, label: 'Kritis',                sub: diffDays + ' hari lagi',            cls: 'critical' };
+    if (diffDays <= 30) return { status: 'warning',  days: diffDays, label: 'Perlu Perhatian',       sub: diffDays + ' hari lagi',            cls: 'warning'  };
+    return               { status: 'ok',       days: diffDays, label: 'Aman',                sub: diffDays + ' hari lagi',            cls: 'ok'       };
+}
+
+function fmtTgl(tgl) {
+    if (!tgl) return '—';
+    var p = tgl.split('-');
+    if (p.length !== 3) return tgl;
+    return p[2] + '/' + p[1] + '/' + p[0];
+}
+
+function setFilter(f, btn) {
+    activeFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    renderTable();
+}
+
+// ===== RENDER SUMMARY =====
+function renderSummary() {
+    var all = Object.values(productsData);
+    var withDate = all.filter(function(p) { return !!p.kadaluarsa; });
+    var expired = 0, critical = 0, warning = 0, ok = 0;
+    withDate.forEach(function(p) {
+        var s = getExpiryStatus(p.kadaluarsa);
+        if (!s) return;
+        if (s.status === 'expired')  expired++;
+        else if (s.status === 'critical') critical++;
+        else if (s.status === 'warning')  warning++;
+        else ok++;
+    });
+
+    var now = new Date();
+    document.getElementById('update-time').textContent =
+        '— Update: ' + now.toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+    document.getElementById('summary-bar').innerHTML =
+        '<div class="summary-card total"><div class="sc-val">' + all.length + '</div><div class="sc-label">Total Produk</div></div>' +
+        '<div class="summary-card danger"><div class="sc-val" style="color:var(--red)">' + expired + '</div><div class="sc-label">🚫 Sudah Kadaluarsa</div></div>' +
+        '<div class="summary-card warn"><div class="sc-val" style="color:#f76707">' + critical + '</div><div class="sc-label">⚠ Kritis ≤ 7 hari</div></div>' +
+        '<div class="summary-card warn"><div class="sc-val" style="color:var(--amber)">' + warning + '</div><div class="sc-label">🟡 Peringatan ≤ 30 hari</div></div>' +
+        '<div class="summary-card ok"><div class="sc-val">' + ok + '</div><div class="sc-label">✅ Aman</div></div>' +
+        '<div class="summary-card"><div class="sc-val" style="color:var(--ink3)">' + (all.length - withDate.length) + '</div><div class="sc-label">— Tanpa Tanggal</div></div>';
+}
+
+// ===== RENDER TABLE =====
+function renderTable() {
+    var q = (document.getElementById('search-exp').value || '').toLowerCase();
+    var sortBy = document.getElementById('sort-exp').value;
+    var tbody = document.getElementById('exp-table-body');
+    tbody.innerHTML = '';
+
+    var items = Object.keys(productsData).map(function(id) {
+        var p = productsData[id];
+        return { id: id, p: p, status: getExpiryStatus(p.kadaluarsa) };
+    });
+
+    // Filter
+    items = items.filter(function(item) {
+        var p = item.p;
+        if (q && !p.name.toLowerCase().includes(q)) return false;
+        if (activeFilter === 'all') return true;
+        if (activeFilter === 'none') return !p.kadaluarsa;
+        if (!item.status) return false;
+        return item.status.status === activeFilter;
+    });
+
+    // Sort
+    items.sort(function(a, b) {
+        if (sortBy === 'name') return (a.p.name || '').localeCompare(b.p.name || '');
+        if (sortBy === 'stock') return (a.p.stock || 0) - (b.p.stock || 0);
+        if (sortBy === 'exp-desc') {
+            if (!a.p.kadaluarsa && !b.p.kadaluarsa) return 0;
+            if (!a.p.kadaluarsa) return 1;
+            if (!b.p.kadaluarsa) return -1;
+            return new Date(b.p.kadaluarsa) - new Date(a.p.kadaluarsa);
+        }
+        // exp-asc (default)
+        if (!a.p.kadaluarsa && !b.p.kadaluarsa) return 0;
+        if (!a.p.kadaluarsa) return 1;
+        if (!b.p.kadaluarsa) return -1;
+        return new Date(a.p.kadaluarsa) - new Date(b.p.kadaluarsa);
+    });
+
+    if (items.length === 0) {
+        tbody.innerHTML =
+            '<tr><td colspan="7"><div class="empty-state"><div class="big-icon">🎉</div>' +
+            '<div>Tidak ada produk pada filter ini</div></div></td></tr>';
+        return;
+    }
+
+    items.forEach(function(item, idx) {
+        var p = item.p;
+        var s = item.status;
+        var tr = document.createElement('tr');
+
+        if (s) {
+            if (s.status === 'expired')  tr.className = 'row-expired';
+            else if (s.status === 'critical') tr.className = 'row-critical';
+            else if (s.status === 'warning')  tr.className = 'row-warning';
+        }
+
+        var stockCls = p.stock === 0 ? 'empty' : p.stock <= 5 ? 'low' : 'ok';
+        var stockPill = '<span class="stock-pill ' + stockCls + '">' + (p.stock || 0) + '</span>';
+
+        var expBadge, daysBar;
+        if (!s) {
+            expBadge = '<span class="exp-badge none">—</span>';
+            daysBar = '<span style="color:var(--ink3); font-size:12px;">—</span>';
+        } else {
+            expBadge = '<span class="exp-badge ' + s.cls + '">' + s.label + '</span>';
+            var barPct = s.status === 'expired' ? 100 : Math.min(100, Math.max(0, 1 - (s.days / 365)) * 100);
+            var barColor = s.status === 'expired' ? 'var(--red)' : s.status === 'critical' ? '#f76707' : s.status === 'warning' ? 'var(--amber)' : 'var(--green)';
+            var daysTxt = s.status === 'expired'
+                ? '<span style="color:var(--red); font-family:DM Mono,monospace; font-size:12px; font-weight:700;">' + Math.abs(s.days) + ' hari lalu</span>'
+                : '<span style="font-family:DM Mono,monospace; font-size:12px; font-weight:700;">' + s.days + ' hari</span>';
+            daysBar = '<div class="days-bar-wrap">' + daysTxt +
+                '<div class="days-bar"><div class="days-bar-fill" style="width:' + barPct + '%; background:' + barColor + ';"></div></div>' +
+                '</div>';
+        }
+
+        tr.innerHTML =
+            '<td style="font-family:DM Mono,monospace; font-size:12px; color:var(--ink3);">' + (idx + 1) + '</td>' +
+            '<td><div class="prod-name">' + p.name + '</div>' +
+                (p.barcode ? '<div class="prod-meta">Barcode: ' + p.barcode + '</div>' : '') + '</td>' +
+            '<td>' + stockPill + '</td>' +
+            '<td style="font-family:DM Mono,monospace; font-size:12px;">Rp ' + (p.price || 0).toLocaleString('id-ID') + '</td>' +
+            '<td style="font-family:DM Mono,monospace; font-size:13px; font-weight:600;">' + fmtTgl(p.kadaluarsa) + '</td>' +
+            '<td>' + expBadge + '</td>' +
+            '<td>' + daysBar + '</td>';
+        tbody.appendChild(tr);
+    });
+}
+
+// ===== FIREBASE LISTENER =====
+if (productsRef) {
+    productsRef.on('value', function(snapshot) {
+        productsData = snapshot.val() || {};
+        renderSummary();
+        renderTable();
+    });
+}
+</script>
+</body>
+</html>

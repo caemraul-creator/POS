@@ -301,6 +301,79 @@
         .stock-badge.low { background: #fff3bf; color: var(--amber); }
         .stock-badge.empty { background: #ffe3e3; color: var(--red); }
 
+        /* =========== EXPIRY BADGES =========== */
+        .exp-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-family: 'DM Mono', monospace;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .exp-badge.expired  { background: #ffe3e3; color: var(--red); }
+        .exp-badge.critical { background: #ffe3e3; color: var(--red); }
+        .exp-badge.warning  { background: #fff3bf; color: #b07d00; }
+        .exp-badge.ok       { background: #e6fcf5; color: var(--green); }
+        .exp-badge.none     { background: #f1f3f5; color: var(--ink3); }
+
+        .stock-table tr.row-expired  { background: #fff5f5; }
+        .stock-table tr.row-critical { background: #fff8f0; }
+        .stock-table tr.row-warning  { background: #fffdf0; }
+
+        /* Expiry notification badge */
+        .expiry-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-family: 'DM Mono', monospace;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 6px;
+        }
+        .expiry-badge.danger { background: #ffe3e3; color: var(--red); border: 1.5px solid #ffc9c9; }
+        .expiry-badge.warn   { background: #fff3bf; color: #b07d00; border: 1.5px solid #ffe066; }
+        .expiry-badge:hover  { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+
+        /* Expiry panel */
+        .expiry-panel {
+            background: var(--surface);
+            border-bottom: 1.5px solid var(--border);
+            padding: 0 20px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s;
+        }
+        .expiry-panel.show {
+            max-height: 220px;
+            padding: 12px 20px;
+            overflow-y: auto;
+        }
+        .expiry-panel h5 { font-size: 12px; color: var(--ink2); margin-bottom: 8px; font-weight: 700; }
+        .expiry-panel-items { display: flex; flex-direction: column; gap: 4px; }
+        .expiry-item { font-size: 12px; padding: 5px 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+        .expiry-item.expired  { background: #ffe3e3; color: var(--red); }
+        .expiry-item.critical { background: #fff0e6; color: #e8590c; }
+        .expiry-item.warning  { background: #fff9db; color: #b07d00; }
+
+        /* Kasir expiry warning */
+        .exp-warn-kasir {
+            font-size: 11px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 700;
+            margin-left: 5px;
+        }
+        .exp-warn-kasir.expired  { background: #ffe3e3; color: var(--red); }
+        .exp-warn-kasir.critical { background: #ffe3e3; color: var(--red); }
+        .exp-warn-kasir.warning  { background: #fff3bf; color: #b07d00; }
+
         /* =========== RIGHT PANEL (Cart) =========== */
         .panel-right {
             width: 320px;
@@ -1439,6 +1512,11 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <label>Tanggal Kadaluarsa (Opsional)</label>
+                    <input type="date" id="new-kadaluarsa" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-family:DM Sans,sans-serif; font-size:14px; color:var(--ink); background:var(--bg); outline:none;">
+                    <div style="font-size:11px; color:var(--ink3); margin-top:4px;">💡 Kosongkan jika tidak ada kadaluarsa</div>
+                </div>
+                <div class="form-group">
                     <label>Foto Produk (Opsional)</label>
                     <div class="img-upload-box" onclick="document.getElementById('new-image').click()">
                         <input type="file" id="new-image" accept="image/*" onchange="previewImage(event)">
@@ -1469,10 +1547,18 @@
                     </svg>
                     Cek Stok
                 </button>
+                <span id="expiry-notif-badge" class="expiry-badge danger" style="display:none;" onclick="toggleExpiryPanel()">
+                    🗓 <span id="expiry-notif-count">0</span> Kadaluarsa
+                </span>
+                <a href="kadaluarsa.html" target="_blank" style="padding:8px 14px; background:var(--surface2); border:1.5px solid var(--border); border-radius:8px; font-size:12px; font-weight:600; color:var(--ink2); text-decoration:none; white-space:nowrap;" title="Halaman Monitoring Kadaluarsa">📋 Monitor Kadaluarsa</a>
             </div>
             <div id="low-stock-panel" class="low-stock-panel">
                 <h5>⚠ Produk Perlu Restock</h5>
                 <div class="low-stock-items" id="low-stock-items-list"></div>
+            </div>
+            <div id="expiry-panel" class="expiry-panel">
+                <h5>🗓 Produk Mendekati / Sudah Kadaluarsa</h5>
+                <div class="expiry-panel-items" id="expiry-items-list"></div>
             </div>
             <div class="stock-scroll">
                 <table class="stock-table">
@@ -1483,6 +1569,7 @@
                             <th>Harga</th>
                             <th>Barcode</th>
                             <th>Stok</th>
+                            <th>Kadaluarsa</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -1535,6 +1622,11 @@
                     <input type="text" id="edit-barcode" placeholder="Barcode" style="flex:1;">
                     <button onclick="openScanner('edit-barcode')" style="padding:10px 12px; background:var(--accent); color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:16px;">📷</button>
                 </div>
+            </div>
+            <div class="form-group">
+                <label>Tanggal Kadaluarsa</label>
+                <input type="date" id="edit-kadaluarsa" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-family:DM Sans,sans-serif; font-size:14px; color:var(--ink); background:var(--bg); outline:none;">
+                <div style="font-size:11px; color:var(--ink3); margin-top:4px;">💡 Kosongkan jika tidak ada kadaluarsa</div>
             </div>
             <div class="form-group">
                 <label>Foto Produk</label>
@@ -1817,10 +1909,17 @@ function filterProducts() {
         var isOut = p.stock <= 0;
         var stockColor = isOut ? 'var(--red)' : p.stock <= 5 ? 'var(--amber)' : 'var(--green)';
         var stockBg   = isOut ? '#ffe3e3' : p.stock <= 5 ? '#fff3bf' : '#e6fcf5';
+        var expS = getExpiryStatus(p.kadaluarsa);
+        var expWarnHtml = '';
+        if (expS && (expS.status === 'expired' || expS.status === 'critical')) {
+            expWarnHtml = '<span class="exp-warn-kasir ' + expS.cls + '">' + (expS.status === 'expired' ? '⛔ KADALUARSA' : '⚠ ' + expS.label) + '</span>';
+        } else if (expS && expS.status === 'warning') {
+            expWarnHtml = '<span class="exp-warn-kasir warning">🗓 ' + expS.label + '</span>';
+        }
         var div = document.createElement('div');
         div.className = 'sdrop-item' + (isOut ? ' disabled' : '');
         div.innerHTML =
-            '<div><div class="sdrop-name">' + p.name + '</div>' +
+            '<div><div class="sdrop-name">' + p.name + expWarnHtml + '</div>' +
             '<div class="sdrop-price">Rp ' + p.price.toLocaleString('id-ID') + (p.harga_grosir ? ' · Grosir Rp ' + p.harga_grosir.toLocaleString('id-ID') : '') + '</div></div>' +
             '<span class="sdrop-stock" style="background:' + stockBg + '; color:' + stockColor + '; font-weight:700;">' + (isOut ? 'Habis' : 'Stok ' + p.stock) + '</span>';
         if (!isOut) div.onclick = function() { addToCart(id); clearSearch(); };
@@ -2304,12 +2403,14 @@ function addProduct() {
     var harga_grosir = parseRp(document.getElementById('new-harga-grosir').value);
     var min_grosir = parseInt(document.getElementById('new-min-grosir').value) || 0;
     var hpp = parseRp(document.getElementById('new-hpp').value);
+    var kadaluarsa = document.getElementById('new-kadaluarsa').value;
     if (!name || !price || isNaN(stock)) { showToast('Lengkapi semua data!', 'error'); return; }
     var data = { name: name, price: price, stock: stock };
     if (barcode) data.barcode = barcode;
     if (harga_grosir > 0) data.harga_grosir = harga_grosir;
     if (min_grosir > 0) data.min_grosir = min_grosir;
     if (hpp > 0) data.hpp = hpp;
+    if (kadaluarsa) data.kadaluarsa = kadaluarsa;
     if (newImageData) data.image = newImageData;
     productsRef.push(data).then(function() {
         showToast('✅ Produk berhasil ditambahkan!', 'success');
@@ -2320,6 +2421,7 @@ function addProduct() {
         document.getElementById('new-harga-grosir').value = '';
         document.getElementById('new-min-grosir').value = '';
         document.getElementById('new-hpp').value = '';
+        document.getElementById('new-kadaluarsa').value = '';
         document.getElementById('new-image').value = '';
         document.getElementById('img-preview-thumb').style.display = 'none';
         document.getElementById('img-upload-placeholder').style.display = 'block';
@@ -2354,6 +2456,26 @@ function deleteProduct(id) {
     productsRef.child(id).remove().then(function() {
         showToast('Produk dihapus', '');
     });
+}
+
+// ========== EXPIRY HELPERS ==========
+function getExpiryStatus(tglKadaluarsa) {
+    if (!tglKadaluarsa) return null;
+    var today = new Date(); today.setHours(0,0,0,0);
+    var exp = new Date(tglKadaluarsa);
+    var diffDays = Math.floor((exp - today) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0)  return { status: 'expired',  days: diffDays, label: 'KADALUARSA (' + Math.abs(diffDays) + ' hari lalu)', cls: 'expired' };
+    if (diffDays === 0) return { status: 'critical', days: 0,        label: 'Kadaluarsa HARI INI!',                                cls: 'critical' };
+    if (diffDays <= 7)  return { status: 'critical', days: diffDays, label: 'Sisa ' + diffDays + ' hari ⚠',                        cls: 'critical' };
+    if (diffDays <= 30) return { status: 'warning',  days: diffDays, label: 'Sisa ' + diffDays + ' hari',                          cls: 'warning' };
+    return { status: 'ok', days: diffDays, label: 'Sisa ' + diffDays + ' hari', cls: 'ok' };
+}
+
+function fmtTglKdl(tgl) {
+    if (!tgl) return '—';
+    var parts = tgl.split('-');
+    if (parts.length !== 3) return tgl;
+    return parts[2] + '/' + parts[1] + '/' + parts[0];
 }
 
 function renderStockGudang() {
@@ -2391,6 +2513,18 @@ function renderStockGudang() {
         }
 
         var stockClass = p.stock === 0 ? 'empty' : p.stock <= 5 ? 'low' : '';
+        var expStatus = getExpiryStatus(p.kadaluarsa);
+        var expHtml;
+        if (!expStatus) {
+            expHtml = '<span class="exp-badge none">—</span>';
+        } else {
+            expHtml = '<span class="exp-badge ' + expStatus.cls + '" title="' + fmtTglKdl(p.kadaluarsa) + '">' + expStatus.label + '</span>';
+        }
+        if (expStatus && (expStatus.status === 'expired' || expStatus.status === 'critical')) {
+            tr.className = 'row-' + expStatus.status;
+        } else if (expStatus && expStatus.status === 'warning') {
+            tr.className = 'row-warning';
+        }
         tr.innerHTML =
             '<td class="td-img">' + imgHtml + '</td>' +
             '<td class="td-name">' + p.name + (p.harga_grosir ? '<br><span style="font-size:10px; color:var(--amber); font-family:DM Mono,monospace; font-weight:600;">Grosir: Rp ' + p.harga_grosir.toLocaleString('id-ID') + ' (min.' + (p.min_grosir||0) + ')</span>' : '') + '</td>' +
@@ -2403,6 +2537,7 @@ function renderStockGudang() {
             ' onkeydown="if(event.key===\'Enter\')this.blur()">' +
             '<button class="sctrl-btn plus" onclick="adjustStock(\'' + id + '\', 1)">+</button>' +
             '</div></td>' +
+            '<td>' + expHtml + '</td>' +
             '<td><div class="action-btns"><button class="edit-btn" onclick="openEditModal(\'' + id + '\')">✏</button><button class="del-btn" onclick="deleteProduct(\'' + id + '\')">🗑</button></div></td>';
         tbody.appendChild(tr);
 
@@ -2431,6 +2566,7 @@ function openEditModal(id) {
     document.getElementById('edit-min-grosir').value = p.min_grosir || '';
     document.getElementById('edit-stock').value = p.stock;
     document.getElementById('edit-barcode').value = p.barcode || '';
+    document.getElementById('edit-kadaluarsa').value = p.kadaluarsa || '';
     editImageData = p.image || null;
     var thumb = document.getElementById('edit-img-thumb');
     if (p.image) {
@@ -2489,6 +2625,8 @@ function saveEdit() {
     data.harga_grosir = hg > 0 ? hg : null;
     data.min_grosir = mg > 0 ? mg : null;
     data.hpp = hpp > 0 ? hpp : null;
+    var editKdl = document.getElementById('edit-kadaluarsa').value;
+    data.kadaluarsa = editKdl || null;
     if (editImageData) data.image = editImageData; else data.image = null;
     productsRef.child(id).update(data).then(function() {
         showToast('✅ Produk diperbarui!', 'success');
@@ -2726,6 +2864,59 @@ function updateLowStockBadge() {
         span.innerHTML = icon + ' <b>' + p.name + '</b>: <b>' + p.stock + '</b> pcs';
         list.appendChild(span);
     });
+
+    // ========== UPDATE EXPIRY BADGE ==========
+    updateExpiryBadge();
+}
+
+function updateExpiryBadge() {
+    var badge = document.getElementById('expiry-notif-badge');
+    var countEl = document.getElementById('expiry-notif-count');
+    var expList = document.getElementById('expiry-items-list');
+    if (!badge) return;
+
+    var expiryItems = [];
+    Object.values(productsData).forEach(function(p) {
+        if (!p.kadaluarsa) return;
+        var s = getExpiryStatus(p.kadaluarsa);
+        if (s && (s.status === 'expired' || s.status === 'critical' || s.status === 'warning')) {
+            expiryItems.push({ name: p.name, status: s, tgl: p.kadaluarsa });
+        }
+    });
+
+    expiryItems.sort(function(a,b){ return new Date(a.tgl) - new Date(b.tgl); });
+
+    var expiredCount = expiryItems.filter(function(x){ return x.status.status === 'expired'; }).length;
+    var criticalCount = expiryItems.filter(function(x){ return x.status.status === 'critical'; }).length;
+
+    if (expiryItems.length === 0) {
+        badge.style.display = 'none';
+    } else {
+        badge.style.display = 'inline-flex';
+        countEl.textContent = expiryItems.length;
+        if (expiredCount > 0 || criticalCount > 0) {
+            badge.className = 'expiry-badge danger';
+            badge.innerHTML = '🚨 <span id="expiry-notif-count">' + expiryItems.length + '</span> Kadaluarsa';
+        } else {
+            badge.className = 'expiry-badge warn';
+            badge.innerHTML = '🗓 <span id="expiry-notif-count">' + expiryItems.length + '</span> Kadaluarsa';
+        }
+    }
+
+    if (expList) {
+        expList.innerHTML = '';
+        expiryItems.forEach(function(item) {
+            var div = document.createElement('div');
+            div.className = 'expiry-item ' + item.status.cls;
+            div.innerHTML = '<b>' + item.name + '</b><span>' + fmtTglKdl(item.tgl) + ' — ' + item.status.label + '</span>';
+            expList.appendChild(div);
+        });
+    }
+}
+
+function toggleExpiryPanel() {
+    var panel = document.getElementById('expiry-panel');
+    if (panel) panel.classList.toggle('show');
 }
 
 function toggleLowStockPanel() {
