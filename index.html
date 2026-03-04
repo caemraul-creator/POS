@@ -118,11 +118,12 @@
         .panel-topbar {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            padding: 14px 20px;
+            padding: 10px 14px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 6px;
             flex-shrink: 0;
+            flex-wrap: wrap;
         }
 
         .topbar-title {
@@ -1467,10 +1468,10 @@
                 <span id="low-stock-badge" class="low-stock-badge" onclick="toggleLowStockPanel()" style="display:none;">
                     ⚠ <span id="low-stock-count">0</span> Menipis
                 </span>
-                <button onclick="switchToKasir()" style="padding:7px 14px; background:#e6fcf5; color:#0ca678; border-radius:8px; font-size:13px; font-weight:700; border:1.5px solid #96f2d7; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s;" onmouseover="this.style.background='#0ca678';this.style.color='#fff';" onmouseout="this.style.background='#e6fcf5';this.style.color='#0ca678';">🏪 Kasir</button>
-                <a href="riwayat.html" style="padding:7px 14px; background:rgba(59,91,219,0.12); color:var(--accent); border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; border:1px solid rgba(59,91,219,0.25);">📋 Riwayat</a>
-                <a href="rekap.html" style="padding:7px 14px; background:#fff3bf; color:#b07d00; border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; border:1px solid #ffe066;">📊 Rekap</a>
-                <button class="exit-btn" onclick="resetRole()">Keluar</button>
+                <button onclick="switchToKasir()" style="padding:5px 10px; background:#e6fcf5; color:#0ca678; border-radius:8px; font-size:12px; font-weight:700; border:1.5px solid #96f2d7; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; white-space:nowrap;" onmouseover="this.style.background='#0ca678';this.style.color='#fff';" onmouseout="this.style.background='#e6fcf5';this.style.color='#0ca678';">🏪 Kasir</button>
+                <a href="riwayat.html" style="padding:5px 10px; background:rgba(59,91,219,0.12); color:var(--accent); border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; border:1px solid rgba(59,91,219,0.25); white-space:nowrap;">📋 Riwayat</a>
+                <a href="rekap.html" style="padding:5px 10px; background:#fff3bf; color:#b07d00; border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; border:1px solid #ffe066; white-space:nowrap;">📊 Rekap</a>
+                <button class="exit-btn" style="padding:5px 10px; font-size:12px;" onclick="resetRole()">Keluar</button>
             </div>
             <div class="form-scroll">
                 <div class="section-header" style="padding:0; border:none; margin-bottom:16px;">
@@ -1550,7 +1551,7 @@
                 <span id="expiry-notif-badge" class="expiry-badge danger" style="display:none;" onclick="toggleExpiryPanel()">
                     🗓 <span id="expiry-notif-count">0</span> Kadaluarsa
                 </span>
-                <a href="kadaluarsa.html" style="padding:8px 14px; background:var(--surface2); border:1.5px solid var(--border); border-radius:8px; font-size:12px; font-weight:600; color:var(--ink2); text-decoration:none; white-space:nowrap;" title="Halaman Monitoring Kadaluarsa">📋 Monitor Kadaluarsa</a>
+                <a href="kadaluarsa.html" target="_blank" style="padding:8px 14px; background:var(--surface2); border:1.5px solid var(--border); border-radius:8px; font-size:12px; font-weight:600; color:var(--ink2); text-decoration:none; white-space:nowrap;" title="Halaman Monitoring Kadaluarsa">📋 Monitor Kadaluarsa</a>
             </div>
             <div id="low-stock-panel" class="low-stock-panel">
                 <h5>⚠ Produk Perlu Restock</h5>
@@ -2819,7 +2820,6 @@ function handleBarcode(code) {
 // ========== REALTIME LISTENER ==========
 productsRef.on('value', function(snapshot) {
     productsData = snapshot.val() || {};
-    try { localStorage.setItem('productsCache', JSON.stringify(productsData)); } catch(e) {}
     var role = localStorage.getItem('appRole');
     if (role === 'gudang') renderStockGudang();
     updateLowStockBadge();
