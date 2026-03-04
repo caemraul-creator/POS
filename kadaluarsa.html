@@ -66,6 +66,7 @@
         .filter-btn.f-expired.active  { background: var(--red); border-color: var(--red); }
         .filter-btn.f-critical.active { background: #f76707; border-color: #f76707; }
         .filter-btn.f-warning.active  { background: var(--amber); border-color: var(--amber); color: #fff; }
+        .filter-btn.f-waspada.active  { background: #4dabf7; border-color: #4dabf7; color: #fff; }
         .filter-btn.f-ok.active       { background: var(--green); border-color: var(--green); }
         .search-exp {
             margin-left: auto; padding: 8px 14px 8px 36px; border: 1.5px solid var(--border);
@@ -106,6 +107,7 @@
         .exp-table tr.row-expired  { background: #fff5f5; }
         .exp-table tr.row-critical { background: #fff8f2; }
         .exp-table tr.row-warning  { background: #fffdf0; }
+        .exp-table tr.row-waspada  { background: #e8f4fd; }
 
         .exp-badge {
             display: inline-flex; align-items: center; gap: 5px;
@@ -115,6 +117,7 @@
         .exp-badge.expired  { background: #ffe3e3; color: var(--red); }
         .exp-badge.critical { background: #ffe8d5; color: #e8590c; }
         .exp-badge.warning  { background: #fff3bf; color: #b07d00; }
+        .exp-badge.waspada  { background: #d0ebff; color: #1864ab; }
         .exp-badge.ok       { background: #e6fcf5; color: var(--green); }
         .exp-badge.none     { background: #f1f3f5; color: var(--ink3); }
 
@@ -196,6 +199,7 @@
     <button class="filter-btn f-expired" data-filter="expired" onclick="setFilter('expired', this)">🚫 Kadaluarsa</button>
     <button class="filter-btn f-critical" data-filter="critical" onclick="setFilter('critical', this)">⚠ Kritis (≤7 hari)</button>
     <button class="filter-btn f-warning" data-filter="warning" onclick="setFilter('warning', this)">🟡 Peringatan (≤30 hari)</button>
+    <button class="filter-btn f-waspada" data-filter="waspada" onclick="setFilter('waspada', this)">🔵 Waspada (≤3 bln)</button>
     <button class="filter-btn f-ok" data-filter="ok" onclick="setFilter('ok', this)">✅ Aman</button>
     <button class="filter-btn" data-filter="none" onclick="setFilter('none', this)">— Tanpa Tgl</button>
     <div class="search-wrap-exp">
@@ -260,6 +264,7 @@ function getExpiryStatus(tglKadaluarsa) {
     if (diffDays === 0) return { status: 'critical', days: 0,        label: 'Hari ini!',             sub: 'Hari terakhir',                    cls: 'critical' };
     if (diffDays <= 7)  return { status: 'critical', days: diffDays, label: 'Kritis',                sub: diffDays + ' hari lagi',            cls: 'critical' };
     if (diffDays <= 30) return { status: 'warning',  days: diffDays, label: 'Perlu Perhatian',       sub: diffDays + ' hari lagi',            cls: 'warning'  };
+    if (diffDays <= 90) return { status: 'waspada',  days: diffDays, label: 'Waspada',               sub: diffDays + ' hari lagi',            cls: 'waspada'  };
     return               { status: 'ok',       days: diffDays, label: 'Aman',                sub: diffDays + ' hari lagi',            cls: 'ok'       };
 }
 
@@ -281,13 +286,14 @@ function setFilter(f, btn) {
 function renderSummary() {
     var all = Object.values(productsData);
     var withDate = all.filter(function(p) { return !!p.kadaluarsa; });
-    var expired = 0, critical = 0, warning = 0, ok = 0;
+    var expired = 0, critical = 0, warning = 0, waspada = 0, ok = 0;
     withDate.forEach(function(p) {
         var s = getExpiryStatus(p.kadaluarsa);
         if (!s) return;
         if (s.status === 'expired')  expired++;
         else if (s.status === 'critical') critical++;
         else if (s.status === 'warning')  warning++;
+        else if (s.status === 'waspada')  waspada++;
         else ok++;
     });
 
@@ -300,6 +306,7 @@ function renderSummary() {
         '<div class="summary-card danger"><div class="sc-val" style="color:var(--red)">' + expired + '</div><div class="sc-label">🚫 Sudah Kadaluarsa</div></div>' +
         '<div class="summary-card warn"><div class="sc-val" style="color:#f76707">' + critical + '</div><div class="sc-label">⚠ Kritis ≤ 7 hari</div></div>' +
         '<div class="summary-card warn"><div class="sc-val" style="color:var(--amber)">' + warning + '</div><div class="sc-label">🟡 Peringatan ≤ 30 hari</div></div>' +
+        '<div class="summary-card" style="border-color:#4dabf7"><div class="sc-val" style="color:#1864ab">' + waspada + '</div><div class="sc-label">🔵 Waspada ≤ 3 bln</div></div>' +
         '<div class="summary-card ok"><div class="sc-val">' + ok + '</div><div class="sc-label">✅ Aman</div></div>' +
         '<div class="summary-card"><div class="sc-val" style="color:var(--ink3)">' + (all.length - withDate.length) + '</div><div class="sc-label">— Tanpa Tanggal</div></div>';
 }
