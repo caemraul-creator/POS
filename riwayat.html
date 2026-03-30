@@ -54,7 +54,7 @@
         }
         .filter-select:focus { border-color: var(--accent2); background: #fff; }
         .divider { width: 1px; height: 28px; background: var(--border); margin: 0 4px; }
-        .summary-chips { display: flex; gap: 8px; margin-left: auto; }
+        .summary-chips { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
         .chip {
             padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700;
             font-family: 'DM Mono', monospace;
@@ -148,6 +148,8 @@
             flex: 1; padding: 11px; border-radius: 10px; font-family: 'DM Sans', sans-serif;
             font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.15s;
         }
+        .btn-del-detail { background: #fff5f5; color: var(--red); border: 1.5px solid #ffd0d0; }
+        .btn-del-detail:hover { background: var(--red); color: #fff; border-color: var(--red); }
         .btn-wa-detail { background: #25d366; color: #fff; }
         .btn-wa-detail:hover { background: #1da851; }
         .btn-print-detail { background: var(--accent); color: #fff; }
@@ -233,6 +235,7 @@ var db, transaksiRef;
 var allTransaksi = {};
 var filteredList = [];
 var activeId = null;
+var _filterTimeout = null; // Untuk debounce filter
 
 var BULAN = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
@@ -252,16 +255,26 @@ try {
 function setDefaultDates() {
     var dari = document.getElementById('filter-dari');
     var sampai = document.getElementById('filter-sampai');
+    if (!dari || !sampai) return;
+    
     if (!dari.value && !sampai.value) {
         var now = new Date();
-        var y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0');
+        var y = now.getFullYear();
+        var m = String(now.getMonth() + 1).padStart(2, '0');
         dari.value = y + '-' + m + '-01';
-        var lastDay = new Date(y, now.getMonth()+1, 0).getDate();
-        sampai.value = y + '-' + m + '-' + String(lastDay).padStart(2,'0');
+        var lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+        sampai.value = y + '-' + m + '-' + String(lastDay).padStart(2, '0');
     }
 }
 
 function applyFilter() {
+    if (_filterTimeout) clearTimeout(_filterTimeout);
+    _filterTimeout = setTimeout(function() {
+        _applyFilter();
+    }, 300);
+}
+
+function _applyFilter() {
     var dari = document.getElementById('filter-dari').value;
     var sampai = document.getElementById('filter-sampai').value;
     var metode = document.getElementById('filter-metode').value;
@@ -294,6 +307,8 @@ function applyFilter() {
 
 function renderList() {
     var container = document.getElementById('trx-list');
+    if (!container) return;
+    
     if (filteredList.length === 0) {
         container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Tidak ada transaksi ditemukan</p></div>';
         return;
@@ -329,7 +344,7 @@ function renderList() {
 
 function showDetail(id) {
     activeId = id;
-    renderList(); // re-render to update active state
+    renderList();
 
     var t = allTransaksi[id];
     if (!t) return;
@@ -346,12 +361,14 @@ function showDetail(id) {
             itemRows += '<tr><td class="td-name">' + escHtml(item.name) + ' <span style="font-size:10px;background:#fff4e6;color:#f76707;padding:1px 5px;border-radius:3px;font-weight:700;">GROSIR</span></td>' +
                 '<td class="td-right">' + item.grosir_qty + '×</td>' +
                 '<td class="td-right">Rp ' + item.harga_grosir.toLocaleString('id-ID') + '</td>' +
-                '<td class="td-right">Rp ' + (item.grosir_qty * item.harga_grosir).toLocaleString('id-ID') + '</td></tr>';
+                '<td class="td-right">Rp ' + (item.grosir_qty * item.harga_grosir).toLocaleString('id-ID') + '</td>' +
+                '</tr>';
             if (item.normal_qty > 0) {
                 itemRows += '<tr><td class="td-name">' + escHtml(item.name) + '</td>' +
                     '<td class="td-right">' + item.normal_qty + '×</td>' +
                     '<td class="td-right">Rp ' + item.harga_normal.toLocaleString('id-ID') + '</td>' +
-                    '<td class="td-right">Rp ' + (item.normal_qty * item.harga_normal).toLocaleString('id-ID') + '</td></tr>';
+                    '<td class="td-right">Rp ' + (item.normal_qty * item.harga_normal).toLocaleString('id-ID') + '</td>' +
+                    '</tr>';
             }
         } else {
             var harga = item.grosir_qty > 0 ? item.harga_grosir : item.harga_normal;
@@ -359,7 +376,8 @@ function showDetail(id) {
             itemRows += '<tr><td class="td-name">' + escHtml(item.name) + suffix + '</td>' +
                 '<td class="td-right">' + item.qty + '×</td>' +
                 '<td class="td-right">Rp ' + harga.toLocaleString('id-ID') + '</td>' +
-                '<td class="td-right">Rp ' + item.subtotal.toLocaleString('id-ID') + '</td></tr>';
+                '<td class="td-right">Rp ' + item.subtotal.toLocaleString('id-ID') + '</td>' +
+                '</tr>';
         }
     });
 
@@ -382,7 +400,7 @@ function showDetail(id) {
         '<div class="detail-card">' +
         '<h4>Detail Item</h4>' +
         '<table class="items-table">' +
-        '<thead><tr><th>Produk</th><th class="right">Qty</th><th class="right">Harga</th><th class="right">Subtotal</th></tr></thead>' +
+        '<thead>户<th>Produk</th><th class="right">Qty</th><th class="right">Harga</th><th class="right">Subtotal</th></tr></thead>' +
         '<tbody>' + itemRows + '</tbody>' +
         '</table>' +
         '<div class="total-row">' +
@@ -406,7 +424,7 @@ function deleteTransaksi(id) {
     transaksiRef.child(id).remove().then(function() {
         activeId = null;
         document.getElementById('detail-panel').innerHTML = '<div class="detail-empty"><div class="icon">✅</div><p>Transaksi berhasil dihapus</p></div>';
-        // Toast
+        // Toast sederhana
         var t = document.createElement('div');
         t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#f03e3e;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
         t.textContent = 'Transaksi #' + noStruk + ' dihapus';
@@ -493,11 +511,24 @@ function printDetail(id) {
     var metodeRows = t.metode_bayar === 'Tunai'
         ? '<tr><td style="font-size:12px;font-weight:700;">TUNAI</td><td style="text-align:center;font-weight:700;">=</td><td style="text-align:right;font-size:12px;font-weight:700;">Rp ' + (t.uang_bayar||0).toLocaleString('id-ID') + '</td></tr>' +
           '<tr><td style="font-size:12px;font-weight:700;">KEMBALI</td><td style="text-align:center;font-weight:900;">=</td><td style="text-align:right;font-size:12px;font-weight:900;">Rp ' + (t.kembalian||0).toLocaleString('id-ID') + '</td></tr>'
-        : '<tr><td style="font-size:12px;font-weight:700;">NET ' + t.metode_bayar.toUpperCase() + '</td><td>=</td><td style="text-align:right;font-size:12px;font-weight:800;">Rp ' + (t.total||0).toLocaleString('id-ID') + '</td></tr>';
+        : '<tr><td style="font-size:12px;font-weight:700;">NET ' + t.metode_bayar.toUpperCase() + '</td><td style="text-align:center;">=</td><td style="text-align:right;font-size:12px;font-weight:800;">Rp ' + (t.total||0).toLocaleString('id-ID') + '</td></tr>';
 
     var win = window.open('', '_blank', 'width=380,height=650,scrollbars=yes');
+    if (!win) {
+        alert('Popup diblokir! Izinkan popup untuk mencetak struk.');
+        return;
+    }
+    
     win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk #' + noStruk + '</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:"Courier New",Courier,monospace;width:280px;margin:0 auto;padding:14px 6px;font-size:12px;color:#000;background:#fff;}.toko-nama{text-align:center;font-size:15px;font-weight:900;letter-spacing:1px;margin-bottom:2px;}.toko-sub{text-align:center;font-size:10px;color:#555;margin-bottom:6px;}hr.dash2{border:none;margin:5px 0;height:4px;background:none;border-top:1px dashed #000;border-bottom:1px dashed #000;}hr.dot{border:none;border-top:1px dotted #000;margin:5px 0;}table{width:100%;border-collapse:collapse;}.footer-center{text-align:center;font-size:14px;font-weight:900;letter-spacing:3px;margin:8px 0 3px;}.trx-id{text-align:center;font-size:10px;color:#555;}@media print{body{width:280px;padding:4px;}@page{margin:0;size:80mm auto;}}</style></head><body>');
-    win.document.write('<div class="toko-nama">' + (tokoConfig.nama||'TOKO ANDA') + '</div><div class="toko-sub">' + (tokoConfig.alamat||'') + (tokoConfig.telepon ? ' · Telp: '+tokoConfig.telepon : '') + '</div>' + pelLine + '<hr class="dash2"><table><colgroup><col style="width:auto"><col style="width:40px"><col style="width:80px"></colgroup>' + itemRows + '<tr><td colspan="3" style="padding:2px 0;"><hr style="border:none;border-top:1px dashed #000;margin:0;"></td></tr><tr><td style="font-size:12px;font-weight:700;">TOTAL QTY</td><td style="text-align:center;">=</td><td style="text-align:right;font-weight:700;">' + totalQty + '</td></tr><tr><td style="font-size:12px;font-weight:900;">TOTAL</td><td style="text-align:center;font-weight:900;">=</td><td style="text-align:right;font-weight:900;">Rp ' + (t.total||0).toLocaleString('id-ID') + '</td></tr>' + metodeRows + '</table><hr class="dot">' + '<div class="footer-center">' + (tokoConfig.footer||'TERIMA KASIH').toUpperCase() + '</div>' + '<div class="trx-id">' + tglStr + '/' + noStruk + '</div></body></html>');
+    win.document.write('<div class="toko-nama">' + (tokoConfig.nama||'TOKO ANDA') + '</div><div class="toko-sub">' + (tokoConfig.alamat||'') + (tokoConfig.telepon ? ' · Telp: '+tokoConfig.telepon : '') + '</div>' + pelLine + '<hr class="dash2">' +
+        '<table><colgroup><col style="width:auto"><col style="width:40px"><col style="width:80px"></colgroup>' + itemRows +
+        '<tr><td colspan="3" style="padding:2px 0;"><hr style="border:none;border-top:1px dashed #000;margin:0;"></td></tr>' +
+        '<tr><td style="font-size:12px;font-weight:700;">TOTAL QTY</td><td style="text-align:center;">=</td><td style="text-align:right;font-weight:700;">' + totalQty + '</td></tr>' +
+        '<tr><td style="font-size:12px;font-weight:900;">TOTAL</td><td style="text-align:center;font-weight:900;">=</td><td style="text-align:right;font-weight:900;">Rp ' + (t.total||0).toLocaleString('id-ID') + '</td></tr>' +
+        metodeRows +
+        '</table><hr class="dot">' +
+        '<div class="footer-center">' + (tokoConfig.footer||'TERIMA KASIH').toUpperCase() + '</div>' +
+        '<div class="trx-id">' + tglStr + '/' + noStruk + '</div></body></html>');
     win.document.close();
     win.focus();
     setTimeout(function(){ win.print(); }, 500);

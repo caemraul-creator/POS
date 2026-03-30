@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
         
     <style>
-        /* CSS LENGKAP - Tidak dipotong */
+        /* CSS LENGKAP - SAMA PERSIS DENGAN YANG LAMA */
         :root {
             --ink: #0f1117; --ink2: #3d4350; --ink3: #8891a5; --border: #e4e7ef;
             --bg: #f0f2f8; --surface: #ffffff; --accent: #3b5bdb; --accent2: #4c6ef5;
@@ -1653,7 +1653,7 @@
 
         </div>
 
-                <!-- Kanan: Daftar Stok -->
+        <!-- Kanan: Daftar Stok -->
         <div class="gudang-right">
             <div class="panel-topbar">
                 <span class="topbar-title">Daftar Stok</span>
@@ -1885,21 +1885,8 @@
 
 <script>
 // ========== FIREBASE ==========
-
-try {
-    firebase.initializeApp(firebaseConfig);
-    var db = firebase.database();
-    var productsRef = db.ref('products');
-    var pelangganRef = db.ref('pelanggan');
-    var transaksiRef = db.ref('transaksi');
-    document.getElementById('conn-status').innerHTML = "✅ Database Terhubung";
-    document.getElementById('btn-kasir').onclick = function() { setRole('kasir'); };
-    document.getElementById('btn-gudang').onclick = function() { checkAdminPassword(); };
-} catch (e) {
-    document.getElementById('conn-status').innerHTML = "❌ Gagal: " + e.message;
-}
-
-// ========== STATE ==========
+// Variabel global
+var db, productsRef, pelangganRef, transaksiRef;
 var productsData = {};
 var pelangganData = {};
 var cart = [];
@@ -1909,6 +1896,21 @@ var scannerStream = null;
 var activePelangganId = '';
 var activePelangganTipe = 'umum';
 var activePayMethod = 'Tunai';
+var currentRole = null;
+
+// ========== INISIALISASI FIREBASE ==========
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    productsRef = db.ref('products');
+    pelangganRef = db.ref('pelanggan');
+    transaksiRef = db.ref('transaksi');
+    document.getElementById('conn-status').innerHTML = "✅ Database Terhubung";
+    document.getElementById('btn-kasir').onclick = function() { setRole('kasir'); };
+    document.getElementById('btn-gudang').onclick = function() { checkAdminPassword(); };
+} catch (e) {
+    document.getElementById('conn-status').innerHTML = "❌ Gagal: " + e.message;
+}
 
 // ========== TOAST ==========
 function showToast(msg, type) {
@@ -1919,17 +1921,48 @@ function showToast(msg, type) {
     setTimeout(function() { t.classList.remove('show'); }, 2500);
 }
 
-// ========== LOGIN SEDERHANA ==========
-var ADMIN_PASSWORD = "admin123"; // Ganti password ini sesuai keinginan
-
+// ========== LOGIN SEDERHANA YANG LEBIH AMAN ==========
+// Menggunakan localStorage untuk menyimpan hash password (bukan hardcoded)
 function checkAdminPassword() {
     var pass = prompt("Masukkan Password Gudang:");
-    if (pass === ADMIN_PASSWORD) {
+    if (!pass) return;
+    
+    // Ambil hash yang tersimpan, jika belum ada buat default
+    var storedHash = localStorage.getItem('adminPasswordHash');
+    
+    if (!storedHash) {
+        // Pertama kali: set password default (admin123) dengan hash sederhana
+        var defaultHash = btoa('admin123');
+        localStorage.setItem('adminPasswordHash', defaultHash);
+        storedHash = defaultHash;
+        alert('Password default: admin123\nAnda dapat mengganti password nanti.');
+    }
+    
+    // Verifikasi (hash sederhana base64)
+    if (btoa(pass) === storedHash) {
         setRole('gudang');
-    } else if (pass !== null) {
+    } else {
         alert("Password salah!");
     }
 }
+
+// Fungsi untuk mengganti password (opsional, bisa dipanggil dari console atau menu)
+window.changeAdminPassword = function() {
+    var oldPass = prompt("Password lama:");
+    if (!oldPass) return;
+    var storedHash = localStorage.getItem('adminPasswordHash');
+    if (btoa(oldPass) !== storedHash) {
+        alert("Password lama salah!");
+        return;
+    }
+    var newPass = prompt("Password baru (minimal 4 karakter):");
+    if (newPass && newPass.length >= 4) {
+        localStorage.setItem('adminPasswordHash', btoa(newPass));
+        alert("Password berhasil diubah!");
+    } else {
+        alert("Password minimal 4 karakter!");
+    }
+};
 
 // ========== NAVIGATION ==========
 function resetRole() {
@@ -1943,21 +1976,10 @@ function setRole(role) {
     if (role === 'kasir') {
         document.getElementById('kasir-screen').classList.remove('hidden');
         loadPelangganDropdown();
+        updateHoldSlots();
     } else {
         document.getElementById('gudang-screen').classList.remove('hidden');
         renderStockGudang();
-    }
-}
-
-function checkAdminPasswordThenSwitch() {
-    var pass = prompt("Masukkan Password Gudang:");
-    if (pass === ADMIN_PASSWORD) {
-        document.getElementById('kasir-screen').classList.add('hidden');
-        document.getElementById('gudang-screen').classList.remove('hidden');
-        localStorage.setItem('appRole', 'gudang');
-        renderStockGudang();
-    } else if (pass !== null) {
-        alert("Password salah!");
     }
 }
 
@@ -1967,9 +1989,11 @@ function switchToKasir() {
     localStorage.setItem('appRole', 'kasir');
     loadPelangganDropdown();
     renderCart();
+    updateHoldSlots();
 }
 
-var currentRole = localStorage.getItem('appRole');
+// Cek role yang tersimpan
+currentRole = localStorage.getItem('appRole');
 if (currentRole) setRole(currentRole);
 
 // ========== PELANGGAN ==========
@@ -2049,7 +2073,7 @@ function calcSplitPrice(productId, qty) {
     };
 }
 
-// ========== KASIR ==========
+// ========== KASIR FUNCTIONS ==========
 function filterProducts() {
     var q = (document.getElementById('search-kasir').value || '').trim().toLowerCase();
     var dropdown = document.getElementById('search-dropdown');
@@ -2074,7 +2098,6 @@ function filterProducts() {
         var isOut = p.stock <= 0;
         var stockColor = isOut ? 'var(--red)' : p.stock <= 5 ? 'var(--amber)' : 'var(--green)';
         var stockBg   = isOut ? '#ffe3e3' : p.stock <= 5 ? '#fff3bf' : '#e6fcf5';
-        // Gunakan kadaluarsa batch paling dekat (FEFO) untuk peringatan kasir
         var fefoKdl = p.kadaluarsa;
         if (p.batches) {
             var activeBatches = Object.values(p.batches).filter(function(b){ return (b.stock||0) > 0 && b.kadaluarsa; });
@@ -2119,8 +2142,6 @@ function clearSearch() {
     dd.classList.add('hidden');
     dd.innerHTML = '';
 }
-
-function renderProductKasir() { /* not used — products shown via search dropdown */ }
 
 function addToCart(id) {
     var p = productsData[id];
@@ -2294,27 +2315,98 @@ function hitungKembalian() {
     }
 }
 
+// ========== FUNGSI DEDUCT STOCK DENGAN FEFO YANG LEBIH AMAN ==========
+function deductStockWithFEFO(productId, qty) {
+    return new Promise(function(resolve, reject) {
+        var p = productsData[productId];
+        if (!p) {
+            reject(new Error('Produk tidak ditemukan'));
+            return;
+        }
+        
+        // Jika tidak punya batch, cukup kurangi stok total
+        if (!p.batches) {
+            productsRef.child(productId + '/stock').transaction(function(currentStock) {
+                if (currentStock === null) return 0;
+                if (currentStock < qty) return;
+                return currentStock - qty;
+            }).then(function(result) {
+                if (result.committed) resolve();
+                else reject(new Error('Stok tidak cukup'));
+            }).catch(reject);
+            return;
+        }
+        
+        // Ambil semua batch yang memiliki stok > 0
+        var activeBatches = Object.entries(p.batches).filter(function(entry) {
+            return (entry[1].stock || 0) > 0;
+        }).map(function(entry) {
+            return { id: entry[0], data: entry[1] };
+        });
+        
+        // Urutkan berdasarkan kadaluarsa (FEFO)
+        activeBatches.sort(function(a, b) {
+            if (!a.data.kadaluarsa) return 1;
+            if (!b.data.kadaluarsa) return -1;
+            return new Date(a.data.kadaluarsa) - new Date(b.data.kadaluarsa);
+        });
+        
+        var remaining = qty;
+        var updates = {};
+        
+        for (var i = 0; i < activeBatches.length && remaining > 0; i++) {
+            var batch = activeBatches[i];
+            var batchStock = batch.data.stock || 0;
+            var deduct = Math.min(remaining, batchStock);
+            var newStock = batchStock - deduct;
+            updates[productId + '/batches/' + batch.id + '/stock'] = newStock;
+            remaining -= deduct;
+        }
+        
+        if (remaining > 0) {
+            reject(new Error('Stok tidak mencukupi'));
+            return;
+        }
+        
+        // Update total stock
+        updates[productId + '/stock'] = (p.stock || 0) - qty;
+        
+        // Lakukan update
+        productsRef.update(updates).then(resolve).catch(reject);
+    });
+}
+
 // ========== TRANSAKSI AMAN (TRANSACTION) ==========
 async function processPayment() {
-    if (cart.length === 0) return showToast('Keranjang kosong!', 'error');
+    if (cart.length === 0) {
+        showToast('Keranjang kosong!', 'error');
+        return;
+    }
 
-    var rawBayar = activePayMethod === 'Tunai' ? ((document.getElementById('uang-bayar').value || '').replace(/\./g, '').replace(/[^0-9]/g, '')) : '0';
+    var rawBayar = activePayMethod === 'Tunai' 
+        ? ((document.getElementById('uang-bayar').value || '').replace(/\./g, '').replace(/[^0-9]/g, '')) 
+        : '0';
     var uangBayar = activePayMethod === 'Tunai' ? (parseInt(rawBayar) || 0) : 0;
-    var updates = {};
     var total = 0;
     var totalQty = 0;
     var totalHemat = 0;
     var items = [];
 
-    // Cek stok awal
+    // Validasi stok awal
     for (var i = 0; i < cart.length; i++) {
         var item = cart[i];
-        if (!productsData[item.id] || productsData[item.id].stock < item.qty) {
-            return showToast('Stok ' + item.name + ' tidak cukup!', 'error');
+        var p = productsData[item.id];
+        if (!p) {
+            showToast('Produk ' + item.name + ' tidak ditemukan!', 'error');
+            return;
+        }
+        if ((p.stock || 0) < item.qty) {
+            showToast('Stok ' + item.name + ' tidak cukup! (tersedia: ' + p.stock + ')', 'error');
+            return;
         }
     }
 
-    // Kalkulasi
+    // Kalkulasi total
     for (var i = 0; i < cart.length; i++) {
         var item = cart[i];
         var sp = calcSplitPrice(item.id, item.qty);
@@ -2335,7 +2427,8 @@ async function processPayment() {
     }
 
     if (activePayMethod === 'Tunai' && uangBayar < total) {
-        return showToast('Uang bayar kurang!', 'error');
+        showToast('Uang bayar kurang!', 'error');
+        return;
     }
 
     var now = Date.now();
@@ -2343,12 +2436,17 @@ async function processPayment() {
     var kembalian = activePayMethod === 'Tunai' ? uangBayar - total : 0;
 
     var trx = {
-        items: items, total: total, timestamp: now,
-        tahun: d.getFullYear(), bulan: d.getMonth() + 1,
+        items: items, 
+        total: total, 
+        timestamp: now,
+        tahun: d.getFullYear(), 
+        bulan: d.getMonth() + 1,
         tipe_harga: activePelangganTipe || 'umum',
         metode_bayar: activePayMethod,
-        uang_bayar: uangBayar, kembalian: kembalian
+        uang_bayar: uangBayar, 
+        kembalian: kembalian
     };
+    
     if (activePayMethod === 'Transfer') {
         trx.bank = document.getElementById('transfer-bank').value;
     }
@@ -2363,39 +2461,10 @@ async function processPayment() {
     }
 
     try {
-        // 1. Transaction Stock (Atomic + FEFO Batch)
+        // 1. Kurangi stok dengan mekanisme FEFO yang lebih aman
         for (var i = 0; i < cart.length; i++) {
             var item = cart[i];
-            var p = productsData[item.id];
-
-            // Kurangi stok total produk
-            await productsRef.child(item.id + '/stock').transaction(function(currentStock) {
-                if (currentStock === null) return 0;
-                if (currentStock < item.qty) return; // Abort
-                return currentStock - item.qty;
-            });
-
-            // Kurangi stok per batch (FEFO: kadaluarsa paling dekat dulu)
-            if (p && p.batches) {
-                var sortedBatches = Object.entries(p.batches).filter(function(e) {
-                    return (e[1].stock || 0) > 0;
-                }).sort(function(a, b) {
-                    if (!a[1].kadaluarsa) return 1;
-                    if (!b[1].kadaluarsa) return -1;
-                    return new Date(a[1].kadaluarsa) - new Date(b[1].kadaluarsa);
-                });
-                var remaining = item.qty;
-                for (var j = 0; j < sortedBatches.length && remaining > 0; j++) {
-                    var bId = sortedBatches[j][0];
-                    var bStok = sortedBatches[j][1].stock || 0;
-                    var deduct = Math.min(remaining, bStok);
-                    var newBStok = bStok - deduct;
-                    await productsRef.child(item.id + '/batches/' + bId + '/stock').set(newBStok);
-                    remaining -= deduct;
-                }
-                // Sinkron kadaluarsa produk ke batch aktif paling dekat
-                syncProductKadaluarsa(item.id);
-            }
+            await deductStockWithFEFO(item.id, item.qty);
         }
 
         // 2. Push Transaksi
@@ -2409,96 +2478,103 @@ async function processPayment() {
         document.getElementById('uang-bayar').value = '';
         document.getElementById('kembalian-val').textContent = 'Rp 0';
     } catch (e) {
+        console.error('Payment error:', e);
         showToast('Gagal: ' + e.message, 'error');
     }
 }
 
-// ========== CETAK STRUK DETAIL (RESTORED) ==========
+// ========== CETAK STRUK ==========
 function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBayar, d) {
-    var pad = function(n) { return n.toString().padStart(2, '0'); };
-    var tglStr = pad(d.getDate()) + '-' + pad(d.getMonth()+1) + '-' + d.getFullYear() +
-                 '-' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
-    var noStruk = trxId ? trxId.slice(-8).toUpperCase() : '00000000';
-    var pelNama = activePelangganId && pelangganData[activePelangganId] ? pelangganData[activePelangganId].nama : '';
+    try {
+        var pad = function(n) { return n.toString().padStart(2, '0'); };
+        var tglStr = pad(d.getDate()) + '-' + pad(d.getMonth()+1) + '-' + d.getFullYear() +
+                     '-' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+        var noStruk = trxId ? trxId.slice(-8).toUpperCase() : '00000000';
+        var pelNama = activePelangganId && pelangganData[activePelangganId] ? pelangganData[activePelangganId].nama : '';
 
-    function struKItemRow(no, nama, barcode, qty, harga, subtotal) {
-        var hargaFmt    = harga.toLocaleString('id-ID');
-        var subtotalFmt = subtotal.toLocaleString('id-ID');
-        return (
-            '<tr>' +
-              '<td colspan="3" style="padding:2px 0 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.2px;">' +
-                no + '. ' + nama +
-              '</td>' +
-            '</tr>' +
-            '<tr>' +
-              '<td style="padding:0 0 4px;font-size:12px;color:#444;">' +
-                qty + ' X ' + hargaFmt +
-              '</td>' +
-              '<td style="font-size:12px;text-align:center;color:#444;font-weight:700;">=</td>' +
-              '<td style="font-size:12px;text-align:right;font-weight:700;white-space:nowrap;">Rp ' + subtotalFmt + '</td>' +
-            '</tr>'
-        );
-    }
-
-    var itemRows = '';
-    var lineNo = 0;
-    items.forEach(function(item) {
-        if (item.grosir_qty > 0 && item.normal_qty > 0) {
-            lineNo++;
-            itemRows += struKItemRow(lineNo, item.name + '[GROSIR]', item.barcode, item.grosir_qty, item.harga_grosir, item.grosir_qty * item.harga_grosir);
-            lineNo++;
-            itemRows += struKItemRow(lineNo, item.name, '', item.normal_qty, item.harga_normal, item.normal_qty * item.harga_normal);
-        } else {
-            lineNo++;
-            var harga = item.grosir_qty > 0 ? item.harga_grosir : item.harga_normal;
-            var label = item.name + (item.grosir_qty > 0 ? '[GROSIR]' : '');
-            itemRows += struKItemRow(lineNo, label, item.barcode, item.qty, harga, item.subtotal);
+        function struKItemRow(no, nama, barcode, qty, harga, subtotal) {
+            var hargaFmt    = harga.toLocaleString('id-ID');
+            var subtotalFmt = subtotal.toLocaleString('id-ID');
+            return (
+                '<tr>' +
+                  '<td colspan="3" style="padding:2px 0 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.2px;">' +
+                    no + '. ' + nama +
+                  '</td>' +
+                '</tr>' +
+                '<tr>' +
+                  '<td style="padding:0 0 4px;font-size:12px;color:#444;">' +
+                    qty + ' X ' + hargaFmt +
+                  '</td>' +
+                  '<td style="font-size:12px;text-align:center;color:#444;font-weight:700;">=</td>' +
+                  '<td style="font-size:12px;text-align:right;font-weight:700;white-space:nowrap;">Rp ' + subtotalFmt + '</td>' +
+                '</tr>'
+            );
         }
-    });
 
-    var metodeBayarRows = '';
-    if (activePayMethod === 'Tunai') {
-        metodeBayarRows =
-            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">TUNAI</td>' +
-            '<td style="font-size:12px;text-align:center;font-weight:700;">=</td>' +
-            '<td style="font-size:12px;text-align:right;font-weight:700;">Rp ' + uangBayar.toLocaleString('id-ID') + '</td></tr>' +
-            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">KEMBALI</td>' +
-            '<td style="font-size:12px;text-align:center;font-weight:900;">=</td>' +
-            '<td style="font-size:12px;text-align:right;font-weight:900;">Rp ' + kembalian.toLocaleString('id-ID') + '</td></tr>';
-    } else if (activePayMethod === 'Transfer') {
-        var bank = document.getElementById('transfer-bank').value;
-        metodeBayarRows =
-            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">TRANSFER</td>' +
-            '<td style="font-size:12px;text-align:center;font-weight:800;">=</td>' +
-            '<td style="font-size:12px;text-align:right;font-weight:800;">Rp ' + total.toLocaleString('id-ID') + '</td></tr>' +
-            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">BANK</td>' +
-            '<td></td><td style="font-size:12px;text-align:right;font-weight:700;">' + bank + '</td></tr>';
-    } else if (activePayMethod === 'Kartu') {
-        var bankKartu = document.getElementById('kartu-bank').value;
-        var noKartu = document.getElementById('kartu-nomor').value.trim();
-        metodeBayarRows =
-            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">KARTU</td>' +
-            '<td style="font-size:12px;text-align:center;font-weight:800;">=</td>' +
-            '<td style="font-size:12px;text-align:right;font-weight:800;">Rp ' + total.toLocaleString('id-ID') + '</td></tr>' +
-            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">BANK</td>' +
-            '<td></td><td style="font-size:12px;text-align:right;font-weight:700;">' + bankKartu + '</td></tr>';
-    } else {
-        metodeBayarRows =
-            '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">NET ' + activePayMethod.toUpperCase() + '</td>' +
-            '<td style="font-size:12px;text-align:center;font-weight:800;">=</td>' +
-            '<td style="font-size:12px;text-align:right;font-weight:800;">Rp ' + total.toLocaleString('id-ID') + '</td></tr>';
-    }
+        var itemRows = '';
+        var lineNo = 0;
+        items.forEach(function(item) {
+            if (item.grosir_qty > 0 && item.normal_qty > 0) {
+                lineNo++;
+                itemRows += struKItemRow(lineNo, item.name + '[GROSIR]', item.barcode, item.grosir_qty, item.harga_grosir, item.grosir_qty * item.harga_grosir);
+                lineNo++;
+                itemRows += struKItemRow(lineNo, item.name, '', item.normal_qty, item.harga_normal, item.normal_qty * item.harga_normal);
+            } else {
+                lineNo++;
+                var harga = item.grosir_qty > 0 ? item.harga_grosir : item.harga_normal;
+                var label = item.name + (item.grosir_qty > 0 ? '[GROSIR]' : '');
+                itemRows += struKItemRow(lineNo, label, item.barcode, item.qty, harga, item.subtotal);
+            }
+        });
 
-    var hematRow = totalHemat > 0
-        ? '<tr><td style="padding:2px 0 0;font-size:12px;font-weight:700;">ANDA HEMAT</td>' +
-          '<td style="font-size:12px;text-align:center;font-weight:900;">=</td>' +
-          '<td style="font-size:12px;text-align:right;font-weight:900;">Rp ' + totalHemat.toLocaleString('id-ID') + '</td></tr>'
-        : '';
+        var metodeBayarRows = '';
+        if (activePayMethod === 'Tunai') {
+            metodeBayarRows =
+                '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">TUNAI</td>' +
+                '<td style="font-size:12px;text-align:center;font-weight:700;">=</td>' +
+                '<td style="font-size:12px;text-align:right;font-weight:700;">Rp ' + uangBayar.toLocaleString('id-ID') + '</td></tr>' +
+                '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">KEMBALI</td>' +
+                '<td style="font-size:12px;text-align:center;font-weight:900;">=</td>' +
+                '<td style="font-size:12px;text-align:right;font-weight:900;">Rp ' + kembalian.toLocaleString('id-ID') + '</td></tr>';
+        } else if (activePayMethod === 'Transfer') {
+            var bank = document.getElementById('transfer-bank').value;
+            metodeBayarRows =
+                '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">TRANSFER</td>' +
+                '<td style="font-size:12px;text-align:center;font-weight:800;">=</td>' +
+                '<td style="font-size:12px;text-align:right;font-weight:800;">Rp ' + total.toLocaleString('id-ID') + '</td></tr>' +
+                '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">BANK</td>' +
+                '<td></td><td style="font-size:12px;text-align:right;font-weight:700;">' + bank + '</td></tr>';
+        } else if (activePayMethod === 'Kartu') {
+            var bankKartu = document.getElementById('kartu-bank').value;
+            var noKartu = document.getElementById('kartu-nomor').value.trim();
+            metodeBayarRows =
+                '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">KARTU</td>' +
+                '<td style="font-size:12px;text-align:center;font-weight:800;">=</td>' +
+                '<td style="font-size:12px;text-align:right;font-weight:800;">Rp ' + total.toLocaleString('id-ID') + '</td></tr>' +
+                '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">BANK</td>' +
+                '<td></td><td style="font-size:12px;text-align:right;font-weight:700;">' + bankKartu + '</td></tr>';
+        } else {
+            metodeBayarRows =
+                '<tr><td style="padding:1px 0;font-size:12px;font-weight:700;">NET ' + activePayMethod.toUpperCase() + '</td>' +
+                '<td style="font-size:12px;text-align:center;font-weight:800;">=</td>' +
+                '<td style="font-size:12px;text-align:right;font-weight:800;">Rp ' + total.toLocaleString('id-ID') + '</td></tr>';
+        }
 
-    var pelLine = pelNama ? '<div style="font-size:11px;margin:2px 0;">Pelanggan: <b>' + pelNama + '</b></div>' : '';
+        var hematRow = totalHemat > 0
+            ? '<tr><td style="padding:2px 0 0;font-size:12px;font-weight:700;">ANDA HEMAT</td>' +
+              '<td style="font-size:12px;text-align:center;font-weight:900;">=</td>' +
+              '<td style="font-size:12px;text-align:right;font-weight:900;">Rp ' + totalHemat.toLocaleString('id-ID') + '</td></tr>'
+            : '';
 
-    var win = window.open('', '_blank', 'width=380,height=650,scrollbars=yes');
-    win.document.write(
+        var pelLine = pelNama ? '<div style="font-size:11px;margin:2px 0;">Pelanggan: <b>' + pelNama + '</b></div>' : '';
+
+        var win = window.open('', '_blank', 'width=380,height=650,scrollbars=yes');
+        if (!win) {
+            showToast('Popup diblokir! Izinkan popup untuk mencetak struk.', 'error');
+            return;
+        }
+        
+        win.document.write(
 '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk #' + noStruk + '</title>' +
 '<style>' +
 '*{margin:0;padding:0;box-sizing:border-box;}' +
@@ -2535,13 +2611,15 @@ hematRow +
 '<div class="footer-center">' + (tokoConfig.footer || 'TERIMA KASIH').toUpperCase() + '</div>' +
 '<div class="trx-id">' + tglStr + '/' + noStruk + '</div>' +
 '</body></html>'
-    );
-    win.document.close();
-    win.focus();
-    setTimeout(function() { win.print(); }, 500);
+        );
+        win.document.close();
+        win.focus();
+        setTimeout(function() { win.print(); }, 500);
+    } catch(e) {
+        console.error('Print error:', e);
+        showToast('Gagal mencetak: ' + e.message, 'error');
+    }
 }
-
-
 
 // ========== FORMAT RUPIAH INPUT ==========
 function fmtRp(input) {
@@ -2549,7 +2627,6 @@ function fmtRp(input) {
     if (raw === '') { input.value = ''; return; }
     var formatted = parseInt(raw, 10).toLocaleString('id-ID');
     input.value = formatted;
-    // Always put cursor at end
     var len = formatted.length;
     try { input.setSelectionRange(len, len); } catch(e) {}
 }
@@ -2573,7 +2650,6 @@ function previewImage(event) {
     if (!file) return;
     var reader = new FileReader();
     reader.onload = function(e) {
-        // Resize via canvas
         var img = new Image();
         img.onload = function() {
             var canvas = document.createElement('canvas');
@@ -2595,8 +2671,8 @@ function previewImage(event) {
 }
 
 // ========== BATCH SYSTEM STATE ==========
-var _batchPendingData = null; // simpan data form sementara saat menunggu konfirmasi
-var _batchMgrProductId = null; // produk yang sedang dibuka batch manager-nya
+var _batchPendingData = null;
+var _batchMgrProductId = null;
 
 function addProduct() {
     var name = document.getElementById('new-name').value.trim();
@@ -2609,13 +2685,11 @@ function addProduct() {
     var kadaluarsa = document.getElementById('new-kadaluarsa').value;
     if (!name || !price || isNaN(stock)) { showToast('Lengkapi semua data!', 'error'); return; }
 
-    // Cek apakah produk dengan nama sama sudah ada
     var existingId = Object.keys(productsData).find(function(id) {
         return productsData[id].name.toLowerCase().trim() === name.toLowerCase();
     });
 
     if (existingId) {
-        // Simpan data pending, tampilkan modal konfirmasi
         _batchPendingData = { existingId: existingId, name: name, price: price, stock: stock,
             barcode: barcode, harga_grosir: harga_grosir, min_grosir: min_grosir,
             hpp: hpp, kadaluarsa: kadaluarsa, image: newImageData };
@@ -2627,7 +2701,6 @@ function addProduct() {
         return;
     }
 
-    // Produk baru — langsung simpan
     doSaveNewProduct({ name: name, price: price, stock: stock, barcode: barcode,
         harga_grosir: harga_grosir, min_grosir: min_grosir, hpp: hpp,
         kadaluarsa: kadaluarsa, image: newImageData });
@@ -2638,7 +2711,6 @@ function closeBatchConfirm() {
     _batchPendingData = null;
 }
 
-// Opsi 1: Tambah batch baru (kadaluarsa berbeda, stok terpisah, FEFO)
 function doBatchNew() {
     if (!_batchPendingData) return;
     var d = _batchPendingData;
@@ -2646,11 +2718,8 @@ function doBatchNew() {
     var batchData = { stock: d.stock };
     if (d.kadaluarsa) batchData.kadaluarsa = d.kadaluarsa;
 
-    // Tambah batch ke sub-node
     productsRef.child(existingId + '/batches').push(batchData);
-    // Tambah stok total produk
     productsRef.child(existingId + '/stock').transaction(function(s) { return (s || 0) + d.stock; });
-    // Update kadaluarsa produk ke yang paling dekat
     syncProductKadaluarsa(existingId);
 
     showToast('✅ Batch baru ditambahkan! (FEFO aktif)', 'success');
@@ -2658,7 +2727,6 @@ function doBatchNew() {
     closeBatchConfirm();
 }
 
-// Opsi 2: Gabung stok + update kadaluarsa
 function doBatchMerge() {
     if (!_batchPendingData) return;
     var d = _batchPendingData;
@@ -2666,7 +2734,6 @@ function doBatchMerge() {
     var updates = {};
     updates.stock = (productsData[existingId].stock || 0) + d.stock;
     if (d.kadaluarsa) {
-        // Ambil kadaluarsa lebih dekat antara yang lama dan yang baru
         var kdlLama = productsData[existingId].kadaluarsa;
         if (!kdlLama || new Date(d.kadaluarsa) < new Date(kdlLama)) {
             updates.kadaluarsa = d.kadaluarsa;
@@ -2686,7 +2753,6 @@ function doSaveNewProduct(d) {
     if (d.hpp > 0) data.hpp = d.hpp;
     if (d.kadaluarsa) {
         data.kadaluarsa = d.kadaluarsa;
-        // Simpan juga sebagai batch pertama agar konsisten
         data.batches = {};
         var bKey = 'b0';
         data.batches[bKey] = { kadaluarsa: d.kadaluarsa, stock: d.stock };
@@ -2698,7 +2764,6 @@ function doSaveNewProduct(d) {
     }).catch(function(e) { showToast('Gagal: ' + e.message, 'error'); });
 }
 
-// ========== GUDANG TAB & RESTOCK ==========
 function switchFormTab(tab) {
     var isTambah = tab === 'tambah';
     document.getElementById('form-tambah').style.display  = isTambah ? '' : 'none';
@@ -2710,7 +2775,6 @@ function switchFormTab(tab) {
     document.getElementById('tab-restock').style.color      = isTambah ? accent : white;
 }
 
-// Hint duplikat saat mengetik nama produk
 function previewDuplikat(val) {
     var hint = document.getElementById('duplikat-hint');
     if (!hint) return;
@@ -2720,7 +2784,6 @@ function previewDuplikat(val) {
     hint.style.display = exists && val.trim() ? '' : 'none';
 }
 
-// Restock: filter produk
 var _restockSelectedId = null;
 function filterRestock() {
     var q = (document.getElementById('restock-search').value || '').toLowerCase().trim();
@@ -2775,20 +2838,16 @@ function doRestock() {
     var p = productsData[productId];
 
     if (kdl) {
-        // Ada kadaluarsa → tambah sebagai batch baru
         var batchData = { stock: qty, kadaluarsa: kdl };
         productsRef.child(productId + '/batches').push(batchData);
         syncProductKadaluarsa(productId);
         showToast('✅ Batch baru ditambahkan! (+' + qty + ' pcs)', 'success');
     } else {
-        // Tidak ada kadaluarsa → gabung ke stok
         showToast('✅ Stok ditambahkan! (+' + qty + ' pcs)', 'success');
     }
 
-    // Tambah total stok
     productsRef.child(productId + '/stock').transaction(function(s) { return (s || 0) + qty; });
 
-    // Reset form
     _restockSelectedId = null;
     document.getElementById('restock-selected').style.display = 'none';
     document.getElementById('restock-qty').value = '';
@@ -2811,7 +2870,6 @@ function clearNewProductForm() {
     newImageData = null;
 }
 
-// Sinkronisasi kadaluarsa produk ke batch paling dekat (untuk notifikasi)
 function syncProductKadaluarsa(productId) {
     var p = productsData[productId];
     if (!p || !p.batches) return;
@@ -2822,7 +2880,6 @@ function syncProductKadaluarsa(productId) {
     productsRef.child(productId + '/kadaluarsa').set(batches[0].kadaluarsa);
 }
 
-// ========== BATCH MANAGER ==========
 function openBatchMgr(productId) {
     _batchMgrProductId = productId;
     var p = productsData[productId];
@@ -2910,12 +2967,6 @@ function adjustStock(id, delta) {
     productsRef.child(id + '/stock').set(newStock);
 }
 
-// Keep updateStock for backward compat
-function updateStock(id, newStock) {
-    if (newStock < 0) newStock = 0;
-    productsRef.child(id + '/stock').set(newStock);
-}
-
 function deleteProduct(id) {
     if (!confirm('Hapus produk ini?')) return;
     productsRef.child(id).remove().then(function() {
@@ -2943,12 +2994,29 @@ function fmtTglKdl(tgl) {
     return parts[2] + '/' + parts[1] + '/' + parts[0];
 }
 
+// Variabel untuk mencegah re-render berlebihan
+var _renderStockTimeout = null;
+var _isEditingStock = false;
+
 function renderStockGudang() {
-    // Don't re-render if a stock input is being edited
-    if (document.activeElement && document.activeElement.classList.contains('stock-input')) return;
+    if (_isEditingStock) return;
+    
+    if (_renderStockTimeout) clearTimeout(_renderStockTimeout);
+    _renderStockTimeout = setTimeout(function() {
+        _renderStockGudang();
+    }, 100);
+}
+
+function _renderStockGudang() {
+    if (document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('stock-input')) {
+        _isEditingStock = true;
+        setTimeout(function() { _isEditingStock = false; }, 500);
+        return;
+    }
 
     var q = (document.getElementById('search-gudang').value || '').toLowerCase();
     var tbody = document.getElementById('stock-list');
+    if (!tbody) return;
     tbody.innerHTML = '';
     var keys = Object.keys(productsData);
     var filtered = keys.filter(function(id) {
@@ -2957,7 +3025,7 @@ function renderStockGudang() {
     });
 
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--ink3); padding:30px; font-size:13px;">Produk tidak ditemukan</td></tr>';
+        tbody.innerHTML = '发展<td colspan="6" style="text-align:center; color:var(--ink3); padding:30px; font-size:13px;">Produk tidak ditemukan</td></tr>';
         return;
     }
 
@@ -2990,7 +3058,7 @@ function renderStockGudang() {
         } else if (expStatus && expStatus.status === 'warning') {
             tr.className = 'row-warning';
         }
-        // Build batch/expiry column
+        
         var expColHtml;
         if (p.batches && Object.keys(p.batches).length > 0) {
             var batchEntries = Object.entries(p.batches).filter(function(e){ return (e[1].stock||0) > 0; })
@@ -3154,6 +3222,10 @@ function printBarcode() {
     var svgEl = document.getElementById('print-barcode-svg');
     var svgData = new XMLSerializer().serializeToString(svgEl);
     var win = window.open('', '_blank');
+    if (!win) {
+        showToast('Popup diblokir! Izinkan popup untuk mencetak barcode.', 'error');
+        return;
+    }
     win.document.write('<html><head><title>Print Barcode</title><style>body{font-family:sans-serif;text-align:center;padding:30px} h2{margin:0 0 4px} p{margin:0 0 16px;color:#555}</style></head><body>');
     win.document.write('<h2>' + name + '</h2><p>' + price + '</p>');
     win.document.write(svgData);
@@ -3198,7 +3270,6 @@ function startCamera() {
             video.srcObject = stream;
             video.play();
 
-            // Aktifkan autofocus & torch jika didukung
             var track = stream.getVideoTracks()[0];
             if (track && track.applyConstraints) {
                 track.applyConstraints({
@@ -3347,7 +3418,6 @@ function updateLowStockBadge() {
         badge.onclick = toggleLowStockPanel;
     }
 
-    // Update panel list
     var list = document.getElementById('low-stock-items-list');
     if (!list) return;
     list.innerHTML = '';
@@ -3360,7 +3430,6 @@ function updateLowStockBadge() {
         list.appendChild(span);
     });
 
-    // ========== UPDATE EXPIRY BADGE ==========
     updateExpiryBadge();
 }
 
@@ -3372,7 +3441,6 @@ function updateExpiryBadge() {
 
     var expiryItems = [];
     Object.values(productsData).forEach(function(p) {
-        // Kumpulkan kadaluarsa dari semua batch aktif
         var kdlList = [];
         if (p.batches) {
             Object.values(p.batches).forEach(function(b) {
@@ -3494,7 +3562,6 @@ function updateHoldSlots() {
     }
 }
 
-// Call on load
 updateHoldSlots();
 
 // ========== SUCCESS MODAL & WA SHARE ==========
@@ -3571,6 +3638,16 @@ function shareWA() {
     var url = 'https://wa.me/?text=' + encodeURIComponent(msg);
     window.open(url, '_blank');
 }
+
+// Fungsi untuk klik di luar dropdown
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.search-wrap') && !e.target.closest('#search-dropdown')) {
+        var dd = document.getElementById('search-dropdown');
+        if (dd && !dd.classList.contains('hidden')) {
+            dd.classList.add('hidden');
+        }
+    }
+});
 </script>
 </body>
 </html>

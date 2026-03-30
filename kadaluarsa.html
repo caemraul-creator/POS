@@ -253,6 +253,8 @@
 <script>
 // ===== FIREBASE INIT =====
 var db, productsRef;
+var _renderTimeout = null;  // Untuk debounce
+
 try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
@@ -323,11 +325,23 @@ function renderSummary() {
         '<div class="summary-card"><div class="sc-val" style="color:var(--ink3)">' + (all.length - withDate.length) + '</div><div class="sc-label">— Tanpa Tanggal</div></div>';
 }
 
-// ===== RENDER TABLE =====
+// ===== RENDER TABLE DENGAN DEBOUNCE =====
+// Fungsi publik - dipanggil dari event (oninput, onchange, dll)
 function renderTable() {
+    if (_renderTimeout) clearTimeout(_renderTimeout);
+    _renderTimeout = setTimeout(function() {
+        _renderTable();
+    }, 100);
+}
+
+// Fungsi internal - yang benar-benar merender
+function _renderTable() {
     var q = (document.getElementById('search-exp').value || '').toLowerCase();
     var sortBy = document.getElementById('sort-exp').value;
     var tbody = document.getElementById('exp-table-body');
+    
+    if (!tbody) return;
+    
     tbody.innerHTML = '';
 
     var items = Object.keys(productsData).map(function(id) {

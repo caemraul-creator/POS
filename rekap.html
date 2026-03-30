@@ -38,6 +38,7 @@
         .filter-bar {
             background: var(--surface); border-bottom: 1px solid var(--border);
             padding: 12px 24px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+            flex-wrap: wrap;
         }
         .filter-group { display: flex; align-items: center; gap: 8px; }
         .filter-label { font-size: 12px; font-weight: 700; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -55,7 +56,7 @@
         .mode-btn.active { border-color: var(--accent); background: #eef2ff; color: var(--accent); }
         .mode-btn:hover { border-color: var(--accent); color: var(--accent); }
         .divider { width: 1px; height: 28px; background: var(--border); margin: 0 4px; }
-        .summary-chips { display: flex; gap: 8px; margin-left: auto; }
+        .summary-chips { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
         .chip {
             padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700;
             font-family: 'DM Mono', monospace;
@@ -181,17 +182,27 @@ var db, transaksiRef, productsRef;
 var allTransaksi = {};
 var allProducts = {};
 var mode = 'bulanan'; // 'bulanan' | 'tahunan'
+var _renderTimeout = null; // Untuk debounce
 
 var BULAN_NAMA = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+// Fungsi safe number
+function safeNumber(value) {
+    var num = parseInt(value, 10);
+    return isNaN(num) ? 0 : num;
+}
 
 try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
     transaksiRef = db.ref('transaksi');
     productsRef = db.ref('products');
+    
     productsRef.on('value', function(snap) {
         allProducts = snap.val() || {};
+        render(); // Render ulang setelah produk dimuat (untuk laba)
     });
+    
     transaksiRef.on('value', function(snap) {
         allTransaksi = snap.val() || {};
         populateTahun();
@@ -219,8 +230,9 @@ function populateTahun() {
         sel.appendChild(o);
     });
     if (current) sel.value = current;
+    else sel.value = now.getFullYear();
 
-    // Set bulan to current
+    // Set bulan ke bulan saat ini
     var bSel = document.getElementById('sel-bulan');
     if (!bSel.value) bSel.value = now.getMonth() + 1;
 }
@@ -234,10 +246,20 @@ function setMode(m) {
     render();
 }
 
-// ====== RENDER ======
+// ====== RENDER DENGAN DEBOUNCE ======
 function render() {
-    var tahun = parseInt(document.getElementById('sel-tahun').value);
-    var bulan = parseInt(document.getElementById('sel-bulan').value);
+    if (_renderTimeout) clearTimeout(_renderTimeout);
+    _renderTimeout = setTimeout(function() {
+        _render();
+    }, 100);
+}
+
+function _render() {
+    var tahun = safeNumber(document.getElementById('sel-tahun').value);
+    var bulan = safeNumber(document.getElementById('sel-bulan').value);
+    
+    if (!allTransaksi) allTransaksi = {};
+    if (!allProducts) allProducts = {};
 
     // Filter transaksi
     var filtered = Object.values(allTransaksi).filter(function(t) {
@@ -289,6 +311,8 @@ function render() {
 
     var maxQty = rows.length > 0 ? rows[0].qty : 1;
     var content = document.getElementById('content');
+    
+    if (!content) return;
 
     if (rows.length === 0) {
         content.innerHTML =
@@ -298,7 +322,7 @@ function render() {
     }
 
     var html = '<p class="section-title">' + judul + ' · ' + rows.length + ' produk terjual</p>';
-    html += '<table class="rekap-table"><thead><tr>' +
+    html += '<table class="rekap-table"><thead>户' +
         '<th style="width:48px;">#</th>' +
         '<th>Nama Produk</th>' +
         '<th class="right">Qty Terjual</th>' +
@@ -311,7 +335,7 @@ function render() {
         var rank = i + 1;
         var rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
         var barClass  = rank === 1 ? 'top1' : rank === 2 ? 'top2' : rank === 3 ? 'top3' : '';
-        var pct = Math.round((row.qty / maxQty) * 100);
+        var pct = maxQty > 0 ? Math.round((row.qty / maxQty) * 100) : 0;
         var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
         var labaCell = '';
         if (anyHpp) {
@@ -342,8 +366,8 @@ function escHtml(s) {
 }
 
 function printRekap() {
-    var tahun = parseInt(document.getElementById('sel-tahun').value);
-    var bulan = parseInt(document.getElementById('sel-bulan').value);
+    var tahun = safeNumber(document.getElementById('sel-tahun').value);
+    var bulan = safeNumber(document.getElementById('sel-bulan').value);
 
     var filtered = Object.values(allTransaksi).filter(function(t) {
         var tTahun = t.tahun || (t.timestamp ? new Date(t.timestamp).getFullYear() : null);
@@ -399,6 +423,11 @@ function printRekap() {
     var labaFooter = anyHpp ? '<td style="text-align:right; font-weight:800; color:' + (totalLaba>=0?'#0ca678':'#f03e3e') + ';">Rp ' + totalLaba.toLocaleString('id-ID') + '</td>' : '';
 
     var win = window.open('', '_blank', 'width=800,height=900');
+    if (!win) {
+        alert('Popup diblokir! Izinkan popup untuk mencetak rekap.');
+        return;
+    }
+    
     win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + judul + '</title><style>' +
         'body{font-family:"Segoe UI",sans-serif;margin:0;padding:28px;color:#0f1117;font-size:13px;}' +
         '.header{border-bottom:3px solid #3b5bdb;padding-bottom:14px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end;}' +
@@ -410,6 +439,7 @@ function printRekap() {
         '.sum-card .sv{font-size:18px;font-weight:800;color:#0f1117;}' +
         'table{width:100%;border-collapse:collapse;}' +
         'thead th{background:#3b5bdb;color:#fff;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;}' +
+        'thead th:last-child{text-align:right;}' +
         'tbody tr:nth-child(even){background:#f8f9fc;}' +
         'tbody tr:hover{background:#eef2ff;}' +
         '.footer-row{background:#eef2ff!important;font-weight:800;}' +

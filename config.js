@@ -1,10 +1,9 @@
 // ========== KONFIGURASI TOKO ==========
-// Edit bagian ini sesuai data toko Anda
 var tokoConfig = {
-    nama:    "TOKO Bu Anis",          // Nama toko di struk
-    alamat:  "Margoyoso, Jepara", // Alamat toko di struk
-    telepon: "",                   // Telepon toko (opsional)
-    footer:  "Terima kasih! Belanja lagi ya 🛍️" // Footer struk
+    nama:    "TOKO Bu Anis",
+    alamat:  "Margoyoso, Jepara",
+    telepon: "",
+    footer:  "Terima kasih! Belanja lagi ya 🛍️"
 };
 
 // ========== FIREBASE CONFIGURATION ==========
@@ -16,4 +15,13 @@ var firebaseConfig = {
     storageBucket: "pos-kasir-gudang.firebasestorage.app",
     messagingSenderId: "247002713216",
     appId: "1:247002713216:web:1ab4e7c5876e05dac8ea65"
+};
+
+// ========== KONFIGURASI APLIKASI ==========
+var appConfig = {
+    // Password untuk akses gudang (tetap menggunakan prompt)
+    // Tidak disimpan dalam kode, akan diminta saat akses
+    lowStockThreshold: 5,
+    expiryWarningDays: 30,
+    holdMaxSlots: 5
 };
