@@ -548,7 +548,7 @@
         }
 
         .gudang-left {
-            width: 340px;
+            width: 360px;
             background: var(--surface);
             border-right: 1px solid var(--border);
             display: flex;
@@ -1490,77 +1490,170 @@
     <div class="gudang-layout">
         <!-- Kiri: Form -->
         <div class="gudang-left">
+            <!-- TOPBAR -->
             <div class="panel-topbar">
                 <span class="topbar-tag tag-gudang" style="flex-shrink:0;">GUDANG</span>
                 <span id="low-stock-badge" class="low-stock-badge" onclick="toggleLowStockPanel()" style="display:none;">
                     ⚠ <span id="low-stock-count">0</span> Menipis
                 </span>
                 <div style="flex:1;"></div>
-                <button onclick="switchToKasir()" style="padding:5px 10px; background:#e6fcf5; color:#0ca678; border-radius:8px; font-size:12px; font-weight:700; border:1.5px solid #96f2d7; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; white-space:nowrap;" onmouseover="this.style.background='#0ca678';this.style.color='#fff';" onmouseout="this.style.background='#e6fcf5';this.style.color='#0ca678';">🏪 Kasir</button>
+                <button onclick="switchToKasir()" style="padding:5px 10px; background:#e6fcf5; color:#0ca678; border-radius:8px; font-size:12px; font-weight:700; border:1.5px solid #96f2d7; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap;" onmouseover="this.style.background='#0ca678';this.style.color='#fff';" onmouseout="this.style.background='#e6fcf5';this.style.color='#0ca678';">🏪 Kasir</button>
                 <a href="riwayat.html" style="padding:5px 10px; background:rgba(59,91,219,0.12); color:var(--accent); border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; border:1px solid rgba(59,91,219,0.25); white-space:nowrap;">📋 Riwayat</a>
                 <a href="rekap.html" style="padding:5px 10px; background:#fff3bf; color:#b07d00; border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; border:1px solid #ffe066; white-space:nowrap;">📊 Rekap</a>
                 <button class="exit-btn" style="padding:5px 10px; font-size:12px;" onclick="resetRole()">Keluar</button>
             </div>
-            <div class="form-scroll">
-                <div class="section-header" style="padding:0; border:none; margin-bottom:16px;">
-                    <h4>Tambah Produk Baru</h4>
-                    <small>Isi form untuk menambah ke database</small>
+
+            <!-- TAB SWITCHER -->
+            <div style="display:flex; gap:0; padding:12px 16px 0; flex-shrink:0;">
+                <button id="tab-tambah" onclick="switchFormTab('tambah')" style="flex:1; padding:9px 0; border:1.5px solid var(--accent); border-right:none; border-radius:8px 0 0 8px; background:var(--accent); color:#fff; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:700; cursor:pointer;">
+                    ＋ Tambah Produk
+                </button>
+                <button id="tab-restock" onclick="switchFormTab('restock')" style="flex:1; padding:9px 0; border:1.5px solid var(--accent); border-radius:0 8px 8px 0; background:#fff; color:var(--accent); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer;">
+                    📥 Restock Cepat
+                </button>
+            </div>
+
+            <!-- ======= TAB: TAMBAH PRODUK ======= -->
+            <div id="form-tambah" class="form-scroll" style="padding:14px 16px;">
+
+                <!-- Nama Produk — field utama, besar -->
+                <div style="margin-bottom:10px;">
+                    <label style="display:block;font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;">Nama Produk</label>
+                    <input type="text" id="new-name" placeholder="Ketik nama produk…"
+                        style="width:100%;padding:11px 13px;border:2px solid var(--accent);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--ink);background:#fff;outline:none;"
+                        oninput="previewDuplikat(this.value)">
+                    <div id="duplikat-hint" style="font-size:11px;color:var(--amber);margin-top:3px;display:none;">⚠ Nama ini sudah ada — akan ditanya batch/gabung saat disimpan</div>
                 </div>
-                <div class="form-group">
-                    <label>Nama Produk</label>
-                    <input type="text" id="new-name" placeholder="Contoh: Kopi Arabika 250g">
-                </div>
-                <div class="form-group">
-                    <label>Harga Jual Eceran (Rp)</label>
-                    <input type="text" inputmode="numeric" id="new-price" placeholder="15.000" oninput="fmtRp(this)">
-                </div>
-                <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+
+                <!-- Harga Jual + Harga Modal (2 kolom) -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
                     <div>
-                        <label style="display:block; font-size:11px; font-weight:700; color:var(--ink2); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">Harga Grosir (Rp)</label>
-                        <input type="text" inputmode="numeric" id="new-harga-grosir" placeholder="12.000" oninput="fmtRp(this)" style="margin:0;">
+                        <label style="display:block;font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Harga Jual (Rp)</label>
+                        <input type="text" inputmode="numeric" id="new-price" placeholder="0"
+                            oninput="fmtRp(this)"
+                            style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--ink);background:var(--bg);outline:none;">
                     </div>
                     <div>
-                        <label style="display:block; font-size:11px; font-weight:700; color:var(--ink2); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">Min. Qty Grosir</label>
-                        <input type="number" id="new-min-grosir" placeholder="12" style="margin:0;">
+                        <label style="display:block;font-size:11px;font-weight:700;color:#0ca678;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Modal / HPP (Rp)</label>
+                        <input type="text" inputmode="numeric" id="new-hpp" placeholder="0"
+                            oninput="fmtRp(this)"
+                            style="width:100%;padding:9px 11px;border:1.5px solid #b2f2bb;border-radius:8px;font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--ink);background:#f0fdf4;outline:none;">
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Harga Modal / HPP (Rp)</label>
-                    <input type="text" inputmode="numeric" id="new-hpp" placeholder="10.000" oninput="fmtRp(this)" style="border-color: #c3fae8;">
-                    <div style="font-size:11px; color:var(--ink3); margin-top:4px;">💡 Untuk kalkulasi laba di rekap</div>
-                </div>
-                <div class="form-group">
-                    <label>Stok Awal</label>
-                    <input type="number" id="new-stock" placeholder="50">
-                </div>
-                <div class="form-group">
-                    <label>Barcode (Opsional)</label>
-                    <div style="display:flex; gap:8px;">
-                        <input type="text" id="new-barcode" placeholder="Scan atau ketik kode" style="flex:1;">
-                        <button onclick="openScanner('gudang-input')" style="padding:10px 12px; background:var(--accent); color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:16px;" title="Scan Barcode">📷</button>
+
+                <!-- Stok + Kadaluarsa (2 kolom) -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                    <div>
+                        <label style="display:block;font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Stok Awal</label>
+                        <input type="number" id="new-stock" placeholder="0" min="0"
+                            style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:16px;font-weight:800;color:var(--ink);background:var(--bg);outline:none;text-align:center;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Kadaluarsa</label>
+                        <input type="date" id="new-kadaluarsa"
+                            style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:var(--bg);outline:none;">
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Tanggal Kadaluarsa (Opsional)</label>
-                    <input type="date" id="new-kadaluarsa" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-family:DM Sans,sans-serif; font-size:14px; color:var(--ink); background:var(--bg); outline:none;">
-                    <div style="font-size:11px; color:var(--ink3); margin-top:4px;">💡 Kosongkan jika tidak ada kadaluarsa</div>
+
+                <!-- Barcode dengan tombol scan -->
+                <div style="margin-bottom:10px;">
+                    <label style="display:block;font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Barcode (Opsional)</label>
+                    <div style="display:flex;gap:6px;">
+                        <input type="text" id="new-barcode" placeholder="Scan atau ketik kode"
+                            style="flex:1;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);background:var(--bg);outline:none;">
+                        <button onclick="openScanner('gudang-input')" title="Scan Barcode"
+                            style="padding:9px 13px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:17px;flex-shrink:0;">📷</button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Foto Produk (Opsional)</label>
-                    <div class="img-upload-box" onclick="document.getElementById('new-image').click()">
-                        <input type="file" id="new-image" accept="image/*" onchange="previewImage(event)">
-                        <img id="img-preview-thumb" class="img-preview" style="display:none;">
-                        <div id="img-upload-placeholder">
-                            <div style="font-size:28px; margin-bottom:6px;">🖼</div>
-                            <div class="img-upload-label"><span>Klik untuk pilih foto</span> atau drag & drop</div>
+
+                <!-- Detail Grosir (collapsible) -->
+                <details style="margin-bottom:10px;">
+                    <summary style="font-size:12px;font-weight:700;color:var(--accent);cursor:pointer;padding:7px 10px;background:#eef2ff;border-radius:7px;list-style:none;user-select:none;">
+                        ⚙ Pengaturan Grosir (opsional)
+                    </summary>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+                        <div>
+                            <label style="display:block;font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Harga Grosir (Rp)</label>
+                            <input type="text" inputmode="numeric" id="new-harga-grosir" placeholder="0" oninput="fmtRp(this)"
+                                style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);background:var(--bg);outline:none;">
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Min. Qty Grosir</label>
+                            <input type="number" id="new-min-grosir" placeholder="0" min="0"
+                                style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);background:var(--bg);outline:none;">
                         </div>
                     </div>
-                </div>
-                <button class="add-product-btn" onclick="addProduct()">+ Tambah ke Database</button>
+                </details>
+
+                <!-- Foto Produk (collapsible) -->
+                <details style="margin-bottom:14px;">
+                    <summary style="font-size:12px;font-weight:700;color:var(--ink2);cursor:pointer;padding:7px 10px;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;list-style:none;user-select:none;">
+                        🖼 Foto Produk (opsional)
+                    </summary>
+                    <div style="margin-top:8px;">
+                        <div class="img-upload-box" onclick="document.getElementById('new-image').click()" style="min-height:80px;">
+                            <input type="file" id="new-image" accept="image/*" onchange="previewImage(event)">
+                            <img id="img-preview-thumb" class="img-preview" style="display:none;">
+                            <div id="img-upload-placeholder">
+                                <div style="font-size:24px;margin-bottom:4px;">🖼</div>
+                                <div class="img-upload-label"><span>Klik untuk pilih foto</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Tombol Simpan -->
+                <button class="add-product-btn" onclick="addProduct()"
+                    style="background:var(--accent);color:#fff;font-size:15px;padding:13px;border-radius:11px;letter-spacing:0.3px;">
+                    ＋ Simpan Produk
+                </button>
+
             </div>
+
+            <!-- ======= TAB: RESTOCK CEPAT ======= -->
+            <div id="form-restock" class="form-scroll" style="padding:14px 16px; display:none;">
+                <div style="font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.5;">
+                    📦 Cari produk lalu tambahkan stok masuk. Cocok untuk penerimaan barang harian.
+                </div>
+
+                <!-- Search produk untuk restock -->
+                <div style="position:relative;margin-bottom:10px;">
+                    <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;">🔍</span>
+                    <input type="text" id="restock-search" placeholder="Cari nama produk…"
+                        oninput="filterRestock()"
+                        style="width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:var(--bg);outline:none;">
+                    <div id="restock-dropdown" class="sdrop hidden" style="top:100%;left:0;right:0;max-height:200px;overflow-y:auto;"></div>
+                </div>
+
+                <!-- Produk terpilih -->
+                <div id="restock-selected" style="display:none;background:#f0fdf4;border:1.5px solid #b2f2bb;border-radius:10px;padding:12px;margin-bottom:10px;">
+                    <div style="font-weight:700;font-size:14px;color:var(--ink);" id="restock-nama">—</div>
+                    <div style="font-size:12px;color:var(--ink3);margin-top:2px;">Stok saat ini: <b id="restock-stok-kini">0</b></div>
+                </div>
+
+                <!-- Input tambah stok + kadaluarsa baru -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                    <div>
+                        <label style="display:block;font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Jumlah Masuk</label>
+                        <input type="number" id="restock-qty" placeholder="0" min="1"
+                            style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:18px;font-weight:800;color:var(--ink);background:var(--bg);outline:none;text-align:center;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Kadaluarsa Baru</label>
+                        <input type="date" id="restock-kdl"
+                            style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:var(--bg);outline:none;">
+                    </div>
+                </div>
+
+                <button onclick="doRestock()"
+                    style="width:100%;padding:13px;background:#0ca678;color:#fff;border:none;border-radius:11px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.3px;">
+                    📥 Tambah Stok Masuk
+                </button>
+            </div>
+
         </div>
 
-        <!-- Kanan: Daftar Stok -->
+                <!-- Kanan: Daftar Stok -->
         <div class="gudang-right">
             <div class="panel-topbar">
                 <span class="topbar-title">Daftar Stok</span>
@@ -2603,6 +2696,104 @@ function doSaveNewProduct(d) {
         showToast('✅ Produk berhasil ditambahkan!', 'success');
         clearNewProductForm();
     }).catch(function(e) { showToast('Gagal: ' + e.message, 'error'); });
+}
+
+// ========== GUDANG TAB & RESTOCK ==========
+function switchFormTab(tab) {
+    var isTambah = tab === 'tambah';
+    document.getElementById('form-tambah').style.display  = isTambah ? '' : 'none';
+    document.getElementById('form-restock').style.display = isTambah ? 'none' : '';
+    var accent = 'var(--accent)', white = '#fff', bgLight = 'var(--bg)';
+    document.getElementById('tab-tambah').style.background  = isTambah ? accent : white;
+    document.getElementById('tab-tambah').style.color       = isTambah ? white : accent;
+    document.getElementById('tab-restock').style.background = isTambah ? white : accent;
+    document.getElementById('tab-restock').style.color      = isTambah ? accent : white;
+}
+
+// Hint duplikat saat mengetik nama produk
+function previewDuplikat(val) {
+    var hint = document.getElementById('duplikat-hint');
+    if (!hint) return;
+    var exists = Object.values(productsData).some(function(p) {
+        return p.name.toLowerCase().trim() === val.toLowerCase().trim();
+    });
+    hint.style.display = exists && val.trim() ? '' : 'none';
+}
+
+// Restock: filter produk
+var _restockSelectedId = null;
+function filterRestock() {
+    var q = (document.getElementById('restock-search').value || '').toLowerCase().trim();
+    var dd = document.getElementById('restock-dropdown');
+    if (!q) { dd.classList.add('hidden'); dd.innerHTML = ''; return; }
+    var matches = Object.keys(productsData).filter(function(id) {
+        var p = productsData[id];
+        return p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q));
+    }).slice(0, 8);
+    if (matches.length === 0) {
+        dd.classList.remove('hidden');
+        dd.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--ink3);">Produk tidak ditemukan</div>';
+        return;
+    }
+    dd.classList.remove('hidden');
+    dd.innerHTML = '';
+    matches.forEach(function(id) {
+        var p = productsData[id];
+        var div = document.createElement('div');
+        div.className = 'sdrop-item';
+        div.innerHTML =
+            '<div><div class="sdrop-name">' + p.name + '</div>' +
+            '<div class="sdrop-price" style="font-size:11px;color:var(--ink3);">Stok: ' + p.stock + '</div></div>';
+        div.onclick = function() {
+            selectRestockProduct(id);
+            dd.classList.add('hidden');
+            document.getElementById('restock-search').value = '';
+        };
+        dd.appendChild(div);
+    });
+}
+
+function selectRestockProduct(id) {
+    _restockSelectedId = id;
+    var p = productsData[id];
+    var sel = document.getElementById('restock-selected');
+    sel.style.display = '';
+    document.getElementById('restock-nama').textContent = p.name;
+    document.getElementById('restock-stok-kini').textContent = p.stock;
+    document.getElementById('restock-qty').value = '';
+    document.getElementById('restock-kdl').value = '';
+    document.getElementById('restock-qty').focus();
+}
+
+function doRestock() {
+    if (!_restockSelectedId) { showToast('Pilih produk dulu!', 'error'); return; }
+    var qty = parseInt(document.getElementById('restock-qty').value) || 0;
+    var kdl = document.getElementById('restock-kdl').value;
+    if (qty <= 0) { showToast('Masukkan jumlah stok!', 'error'); return; }
+
+    var productId = _restockSelectedId;
+    var p = productsData[productId];
+
+    if (kdl) {
+        // Ada kadaluarsa → tambah sebagai batch baru
+        var batchData = { stock: qty, kadaluarsa: kdl };
+        productsRef.child(productId + '/batches').push(batchData);
+        syncProductKadaluarsa(productId);
+        showToast('✅ Batch baru ditambahkan! (+' + qty + ' pcs)', 'success');
+    } else {
+        // Tidak ada kadaluarsa → gabung ke stok
+        showToast('✅ Stok ditambahkan! (+' + qty + ' pcs)', 'success');
+    }
+
+    // Tambah total stok
+    productsRef.child(productId + '/stock').transaction(function(s) { return (s || 0) + qty; });
+
+    // Reset form
+    _restockSelectedId = null;
+    document.getElementById('restock-selected').style.display = 'none';
+    document.getElementById('restock-qty').value = '';
+    document.getElementById('restock-kdl').value = '';
+    document.getElementById('restock-search').value = '';
 }
 
 function clearNewProductForm() {
