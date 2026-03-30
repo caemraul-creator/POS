@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
         
     <style>
-        /* CSS LENGKAP - SAMA PERSIS DENGAN YANG LAMA */
+        /* CSS LENGKAP - SAMA DENGAN SEBELUMNYA */
         :root {
             --ink: #0f1117; --ink2: #3d4350; --ink3: #8891a5; --border: #e4e7ef;
             --bg: #f0f2f8; --surface: #ffffff; --accent: #3b5bdb; --accent2: #4c6ef5;
@@ -1496,6 +1496,15 @@
                 <span id="low-stock-badge" class="low-stock-badge" onclick="toggleLowStockPanel()" style="display:none;">
                     ⚠ <span id="low-stock-count">0</span> Menipis
                 </span>
+                <!-- TOMBOL CEK BARCODE CEPAT -->
+                <button class="barcode-btn" onclick="openScanner('gudang-cek-barcode')" style="background:var(--amber);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
+                        <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
+                        <line x1="7" y1="8" x2="7" y2="16"/><line x1="10" y1="8" x2="10" y2="16"/>
+                        <line x1="13" y1="8" x2="13" y2="16"/><line x1="16" y1="8" x2="16" y2="16"/>
+                    </svg>
+                    Cek Barcode
+                </button>
                 <div style="flex:1;"></div>
                 <button onclick="switchToKasir()" style="padding:5px 10px; background:#e6fcf5; color:#0ca678; border-radius:8px; font-size:12px; font-weight:700; border:1.5px solid #96f2d7; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap;" onmouseover="this.style.background='#0ca678';this.style.color='#fff';" onmouseout="this.style.background='#e6fcf5';this.style.color='#0ca678';">🏪 Kasir</button>
                 <a href="riwayat.html" style="padding:5px 10px; background:rgba(59,91,219,0.12); color:var(--accent); border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; border:1px solid rgba(59,91,219,0.25); white-space:nowrap;">📋 Riwayat</a>
@@ -1555,15 +1564,19 @@
                     </div>
                 </div>
 
-                <!-- Barcode dengan tombol scan -->
+                <!-- Barcode dengan tombol scan dan cek -->
                 <div style="margin-bottom:10px;">
                     <label style="display:block;font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Barcode (Opsional)</label>
                     <div style="display:flex;gap:6px;">
                         <input type="text" id="new-barcode" placeholder="Scan atau ketik kode"
-                            style="flex:1;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);background:var(--bg);outline:none;">
+                            style="flex:1;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);background:var(--bg);outline:none;"
+                            oninput="checkBarcodeExists(this.value)">
                         <button onclick="openScanner('gudang-input')" title="Scan Barcode"
                             style="padding:9px 13px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:17px;flex-shrink:0;">📷</button>
+                        <button onclick="checkBarcodeNow()" title="Cek Barcode"
+                            style="padding:9px 13px;background:var(--amber);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;flex-shrink:0;">🔍 Cek</button>
                     </div>
+                    <div id="barcode-check-result" style="font-size:11px;margin-top:5px;padding:4px 8px;border-radius:5px;display:none;"></div>
                 </div>
 
                 <!-- Detail Grosir (collapsible) -->
@@ -1885,7 +1898,6 @@
 
 <script>
 // ========== FIREBASE ==========
-// Variabel global
 var db, productsRef, pelangganRef, transaksiRef;
 var productsData = {};
 var pelangganData = {};
@@ -1921,48 +1933,25 @@ function showToast(msg, type) {
     setTimeout(function() { t.classList.remove('show'); }, 2500);
 }
 
-// ========== LOGIN SEDERHANA YANG LEBIH AMAN ==========
-// Menggunakan localStorage untuk menyimpan hash password (bukan hardcoded)
+// ========== LOGIN SEDERHANA ==========
 function checkAdminPassword() {
     var pass = prompt("Masukkan Password Gudang:");
     if (!pass) return;
     
-    // Ambil hash yang tersimpan, jika belum ada buat default
     var storedHash = localStorage.getItem('adminPasswordHash');
-    
     if (!storedHash) {
-        // Pertama kali: set password default (admin123) dengan hash sederhana
         var defaultHash = btoa('admin123');
         localStorage.setItem('adminPasswordHash', defaultHash);
         storedHash = defaultHash;
-        alert('Password default: admin123\nAnda dapat mengganti password nanti.');
+        alert('Password default: admin123');
     }
     
-    // Verifikasi (hash sederhana base64)
     if (btoa(pass) === storedHash) {
         setRole('gudang');
     } else {
         alert("Password salah!");
     }
 }
-
-// Fungsi untuk mengganti password (opsional, bisa dipanggil dari console atau menu)
-window.changeAdminPassword = function() {
-    var oldPass = prompt("Password lama:");
-    if (!oldPass) return;
-    var storedHash = localStorage.getItem('adminPasswordHash');
-    if (btoa(oldPass) !== storedHash) {
-        alert("Password lama salah!");
-        return;
-    }
-    var newPass = prompt("Password baru (minimal 4 karakter):");
-    if (newPass && newPass.length >= 4) {
-        localStorage.setItem('adminPasswordHash', btoa(newPass));
-        alert("Password berhasil diubah!");
-    } else {
-        alert("Password minimal 4 karakter!");
-    }
-};
 
 // ========== NAVIGATION ==========
 function resetRole() {
@@ -1992,7 +1981,6 @@ function switchToKasir() {
     updateHoldSlots();
 }
 
-// Cek role yang tersimpan
 currentRole = localStorage.getItem('appRole');
 if (currentRole) setRole(currentRole);
 
@@ -2315,7 +2303,7 @@ function hitungKembalian() {
     }
 }
 
-// ========== FUNGSI DEDUCT STOCK DENGAN FEFO YANG LEBIH AMAN ==========
+// ========== FUNGSI DEDUCT STOCK DENGAN FEFO ==========
 function deductStockWithFEFO(productId, qty) {
     return new Promise(function(resolve, reject) {
         var p = productsData[productId];
@@ -2324,7 +2312,6 @@ function deductStockWithFEFO(productId, qty) {
             return;
         }
         
-        // Jika tidak punya batch, cukup kurangi stok total
         if (!p.batches) {
             productsRef.child(productId + '/stock').transaction(function(currentStock) {
                 if (currentStock === null) return 0;
@@ -2337,14 +2324,12 @@ function deductStockWithFEFO(productId, qty) {
             return;
         }
         
-        // Ambil semua batch yang memiliki stok > 0
         var activeBatches = Object.entries(p.batches).filter(function(entry) {
             return (entry[1].stock || 0) > 0;
         }).map(function(entry) {
             return { id: entry[0], data: entry[1] };
         });
         
-        // Urutkan berdasarkan kadaluarsa (FEFO)
         activeBatches.sort(function(a, b) {
             if (!a.data.kadaluarsa) return 1;
             if (!b.data.kadaluarsa) return -1;
@@ -2368,15 +2353,12 @@ function deductStockWithFEFO(productId, qty) {
             return;
         }
         
-        // Update total stock
         updates[productId + '/stock'] = (p.stock || 0) - qty;
-        
-        // Lakukan update
         productsRef.update(updates).then(resolve).catch(reject);
     });
 }
 
-// ========== TRANSAKSI AMAN (TRANSACTION) ==========
+// ========== TRANSAKSI ==========
 async function processPayment() {
     if (cart.length === 0) {
         showToast('Keranjang kosong!', 'error');
@@ -2392,7 +2374,6 @@ async function processPayment() {
     var totalHemat = 0;
     var items = [];
 
-    // Validasi stok awal
     for (var i = 0; i < cart.length; i++) {
         var item = cart[i];
         var p = productsData[item.id];
@@ -2406,7 +2387,6 @@ async function processPayment() {
         }
     }
 
-    // Kalkulasi total
     for (var i = 0; i < cart.length; i++) {
         var item = cart[i];
         var sp = calcSplitPrice(item.id, item.qty);
@@ -2461,13 +2441,11 @@ async function processPayment() {
     }
 
     try {
-        // 1. Kurangi stok dengan mekanisme FEFO yang lebih aman
         for (var i = 0; i < cart.length; i++) {
             var item = cart[i];
             await deductStockWithFEFO(item.id, item.qty);
         }
 
-        // 2. Push Transaksi
         var ref = await transaksiRef.push(trx);
         var trxId = ref.key;
         showToast('✅ Pembayaran berhasil!', 'success');
@@ -2496,8 +2474,7 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
             var hargaFmt    = harga.toLocaleString('id-ID');
             var subtotalFmt = subtotal.toLocaleString('id-ID');
             return (
-                '<tr>' +
-                  '<td colspan="3" style="padding:2px 0 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.2px;">' +
+                '发展<td colspan="3" style="padding:2px 0 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.2px;">' +
                     no + '. ' + nama +
                   '</td>' +
                 '</tr>' +
@@ -2581,7 +2558,6 @@ function cetakStruk(trxId, items, total, totalQty, totalHemat, kembalian, uangBa
 'body{font-family:"Courier New",Courier,monospace;width:280px;margin:0 auto;padding:14px 6px;font-size:12px;color:#000;background:#fff;}' +
 '.toko-nama{text-align:center;font-size:15px;font-weight:900;letter-spacing:1px;margin-bottom:2px;}' +
 '.toko-sub{text-align:center;font-size:10px;color:#555;margin-bottom:6px;}' +
-'hr.dash{border:none;border-top:1px dashed #000;margin:5px 0;}' +
 'hr.dash2{border:none;margin:5px 0;height:4px;background:none;border-top:1px dashed #000;border-bottom:1px dashed #000;}' +
 'hr.dot{border:none;border-top:1px dotted #000;margin:5px 0;}' +
 'table{width:100%;border-collapse:collapse;}' +
@@ -2635,14 +2611,117 @@ function parseRp(val) {
     return parseInt(String(val).replace(/\./g, '').replace(/[^0-9]/g, '')) || 0;
 }
 
-// Debounce helper
 var _debounceTimers = {};
 function debounce(key, fn, delay) {
     clearTimeout(_debounceTimers[key]);
     _debounceTimers[key] = setTimeout(fn, delay || 600);
 }
 
-// ========== GUDANG ==========
+// ========== FUNGSI CEK BARCODE ==========
+function checkBarcodeExists(barcode) {
+    if (!barcode || barcode.trim() === '') {
+        document.getElementById('barcode-check-result').style.display = 'none';
+        document.getElementById('new-barcode').style.borderColor = '';
+        return;
+    }
+    
+    if (window._barcodeCheckTimeout) clearTimeout(window._barcodeCheckTimeout);
+    window._barcodeCheckTimeout = setTimeout(function() {
+        _checkBarcode(barcode);
+    }, 500);
+}
+
+function checkBarcodeNow() {
+    var barcode = document.getElementById('new-barcode').value.trim();
+    if (!barcode) {
+        showToast('Masukkan atau scan barcode terlebih dahulu!', 'error');
+        return;
+    }
+    _checkBarcode(barcode);
+}
+
+function _checkBarcode(barcode) {
+    var resultDiv = document.getElementById('barcode-check-result');
+    var foundProduct = null;
+    var foundId = null;
+    
+    for (var id in productsData) {
+        if (productsData[id].barcode === barcode) {
+            foundProduct = productsData[id];
+            foundId = id;
+            break;
+        }
+    }
+    
+    if (foundProduct) {
+        var stockStatus = foundProduct.stock === 0 
+            ? '<span style="color:var(--red);">(Stok Habis)</span>' 
+            : foundProduct.stock <= 5 
+                ? '<span style="color:var(--amber);">(Stok: ' + foundProduct.stock + ')</span>' 
+                : '<span style="color:var(--green);">(Stok: ' + foundProduct.stock + ')</span>';
+        
+        resultDiv.innerHTML = '✅ <strong>Produk sudah ada!</strong><br>' +
+            '📦 ' + foundProduct.name + '<br>' +
+            '💰 Rp ' + (foundProduct.price || 0).toLocaleString('id-ID') + ' ' + stockStatus + '<br>' +
+            '<span style="font-size:10px;color:var(--ink3);">👉 Gunakan form RESTOCK untuk menambah stok, atau tambah batch baru dengan kadaluarsa berbeda.</span>';
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = '#e6fcf5';
+        resultDiv.style.border = '1px solid #b2f2bb';
+        resultDiv.style.color = '#0ca678';
+        
+        var actionHtml = '<div style="margin-top:8px;display:flex;gap:6px;">' +
+            '<button onclick="quickRestock(\'' + foundId + '\')" style="padding:4px 10px;background:#0ca678;color:#fff;border:none;border-radius:5px;font-size:11px;cursor:pointer;">📥 Restock Cepat</button>' +
+            '<button onclick="fillFormFromProduct(\'' + foundId + '\')" style="padding:4px 10px;background:#3b5bdb;color:#fff;border:none;border-radius:5px;font-size:11px;cursor:pointer;">✏️ Gunakan Data Ini</button>' +
+            '</div>';
+        resultDiv.innerHTML += actionHtml;
+        
+        document.getElementById('new-barcode').style.borderColor = '#0ca678';
+    } else {
+        resultDiv.innerHTML = '🆕 <strong>Barcode belum terdaftar!</strong><br>' +
+            'Silakan isi form di bawah untuk menambahkan produk baru.';
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = '#fff3bf';
+        resultDiv.style.border = '1px solid #ffe066';
+        resultDiv.style.color = '#b07d00';
+        
+        document.getElementById('new-barcode').style.borderColor = '#f59f00';
+    }
+}
+
+function quickRestock(productId) {
+    switchFormTab('restock');
+    selectRestockProduct(productId);
+    setTimeout(function() {
+        document.getElementById('restock-qty').focus();
+    }, 100);
+    showToast('Silakan masukkan jumlah stok tambahan', 'success');
+}
+
+function fillFormFromProduct(productId) {
+    var p = productsData[productId];
+    if (!p) return;
+    
+    document.getElementById('new-name').value = p.name + ' (copy)';
+    document.getElementById('new-price').value = p.price ? p.price.toLocaleString('id-ID') : '';
+    document.getElementById('new-hpp').value = p.hpp ? p.hpp.toLocaleString('id-ID') : '';
+    document.getElementById('new-harga-grosir').value = p.harga_grosir ? p.harga_grosir.toLocaleString('id-ID') : '';
+    document.getElementById('new-min-grosir').value = p.min_grosir || '';
+    document.getElementById('new-barcode').value = '';
+    
+    document.getElementById('new-stock').value = '';
+    document.getElementById('new-kadaluarsa').value = '';
+    
+    var resultDiv = document.getElementById('barcode-check-result');
+    resultDiv.style.display = 'none';
+    document.getElementById('new-barcode').style.borderColor = '';
+    
+    document.getElementById('new-name').focus();
+    document.getElementById('new-name').select();
+    
+    showToast('Form telah diisi, silakan edit dan simpan sebagai produk baru', 'success');
+}
+
+// ========== GUDANG FUNCTIONS ==========
 var newImageData = null;
 
 function previewImage(event) {
@@ -2670,7 +2749,6 @@ function previewImage(event) {
     reader.readAsDataURL(file);
 }
 
-// ========== BATCH SYSTEM STATE ==========
 var _batchPendingData = null;
 var _batchMgrProductId = null;
 
@@ -2868,12 +2946,15 @@ function clearNewProductForm() {
     document.getElementById('img-preview-thumb').style.display = 'none';
     document.getElementById('img-upload-placeholder').style.display = 'block';
     newImageData = null;
+    
+    var resultDiv = document.getElementById('barcode-check-result');
+    resultDiv.style.display = 'none';
+    document.getElementById('new-barcode').style.borderColor = '';
 }
 
 function syncProductKadaluarsa(productId) {
     var p = productsData[productId];
     if (!p || !p.batches) return;
-    var today = new Date(); today.setHours(0,0,0,0);
     var batches = Object.values(p.batches).filter(function(b) { return b.stock > 0 && b.kadaluarsa; });
     if (batches.length === 0) return;
     batches.sort(function(a,b) { return new Date(a.kadaluarsa) - new Date(b.kadaluarsa); });
@@ -2994,13 +3075,11 @@ function fmtTglKdl(tgl) {
     return parts[2] + '/' + parts[1] + '/' + parts[0];
 }
 
-// Variabel untuk mencegah re-render berlebihan
 var _renderStockTimeout = null;
 var _isEditingStock = false;
 
 function renderStockGudang() {
     if (_isEditingStock) return;
-    
     if (_renderStockTimeout) clearTimeout(_renderStockTimeout);
     _renderStockTimeout = setTimeout(function() {
         _renderStockGudang();
@@ -3344,13 +3423,38 @@ function handleBarcode(code) {
 
     if (scannerMode === 'gudang-input') {
         document.getElementById('new-barcode').value = code;
+        _checkBarcode(code);
         closeScanner();
         showToast('Barcode: ' + code, 'success');
-    } else if (scannerMode === 'edit-barcode') {
+    } 
+    else if (scannerMode === 'gudang-cek-barcode') {
+        var found = null;
+        var foundId = null;
+        for (var id in productsData) {
+            if (productsData[id].barcode === code) { 
+                found = productsData[id];
+                foundId = id;
+                break; 
+            }
+        }
+        if (found) {
+            document.getElementById('scanner-result').innerHTML = '✅ <strong>' + found.name + '</strong><br>Stok: ' + found.stock + ' pcs<br>' +
+                '<button onclick="quickRestockFromScanner(\'' + foundId + '\')" style="margin-top:5px;padding:4px 10px;background:#0ca678;color:#fff;border:none;border-radius:5px;cursor:pointer;">📥 Restock</button>' +
+                '<button onclick="closeScanner()" style="margin-top:5px;margin-left:5px;padding:4px 10px;background:#868e96;color:#fff;border:none;border-radius:5px;cursor:pointer;">Tutup</button>';
+            document.getElementById('scanner-result').className = 'scanner-result found';
+        } else {
+            document.getElementById('scanner-result').innerHTML = '⚠ Barcode tidak ditemukan di database<br>' +
+                '<button onclick="openAddFromScanner(\'' + code + '\')" style="margin-top:5px;padding:4px 10px;background:#3b5bdb;color:#fff;border:none;border-radius:5px;cursor:pointer;">➕ Tambah Produk Baru</button>' +
+                '<button onclick="closeScanner()" style="margin-top:5px;margin-left:5px;padding:4px 10px;background:#868e96;color:#fff;border:none;border-radius:5px;cursor:pointer;">Tutup</button>';
+            document.getElementById('scanner-result').className = 'scanner-result notfound';
+        }
+    }
+    else if (scannerMode === 'edit-barcode') {
         document.getElementById('edit-barcode').value = code;
         closeScanner();
         showToast('Barcode: ' + code, 'success');
-    } else if (scannerMode === 'gudang-cek') {
+    } 
+    else if (scannerMode === 'gudang-cek') {
         var found = null;
         for (var id in productsData) {
             if (productsData[id].barcode === code) { found = productsData[id]; break; }
@@ -3364,7 +3468,8 @@ function handleBarcode(code) {
             document.getElementById('scanner-result').className = 'scanner-result notfound';
         }
         setTimeout(closeScanner, 2000);
-    } else if (scannerMode === 'kasir') {
+    } 
+    else if (scannerMode === 'kasir') {
         var foundId = null;
         for (var pid in productsData) {
             if (productsData[pid].barcode === code) { foundId = pid; break; }
@@ -3380,6 +3485,24 @@ function handleBarcode(code) {
             setTimeout(closeScanner, 1000);
         }
     }
+}
+
+function quickRestockFromScanner(productId) {
+    closeScanner();
+    switchFormTab('restock');
+    selectRestockProduct(productId);
+    setTimeout(function() {
+        document.getElementById('restock-qty').focus();
+    }, 100);
+    showToast('Masukkan jumlah stok tambahan', 'success');
+}
+
+function openAddFromScanner(barcode) {
+    closeScanner();
+    document.getElementById('new-barcode').value = barcode;
+    _checkBarcode(barcode);
+    document.getElementById('new-name').focus();
+    showToast('Silakan lengkapi data produk baru', 'success');
 }
 
 // ========== REALTIME LISTENER ==========
@@ -3639,7 +3762,7 @@ function shareWA() {
     window.open(url, '_blank');
 }
 
-// Fungsi untuk klik di luar dropdown
+// Tutup dropdown saat klik di luar
 document.addEventListener('click', function(e) {
     if (!e.target.closest('.search-wrap') && !e.target.closest('#search-dropdown')) {
         var dd = document.getElementById('search-dropdown');
