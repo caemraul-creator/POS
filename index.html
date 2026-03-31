@@ -1525,6 +1525,24 @@
             <!-- ======= TAB: TAMBAH PRODUK ======= -->
             <div id="form-tambah" class="form-scroll" style="padding:14px 16px;">
 
+                <!-- ===== SCAN DULU PANEL ===== -->
+                <div id="scan-dulu-panel" style="background:#eef2ff;border:2px dashed #4c6ef5;border-radius:12px;padding:14px 16px;margin-bottom:14px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
+                        🚀 Langkah 1 — Scan barcode produk dulu
+                    </div>
+                    <button onclick="openScanner('tambah-scan-dulu')"
+                        style="width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;letter-spacing:0.3px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:20px;height:20px">
+                            <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
+                            <line x1="7" y1="8" x2="7" y2="16"/><line x1="10" y1="8" x2="10" y2="16"/>
+                            <line x1="13" y1="8" x2="13" y2="16"/><line x1="16" y1="8" x2="16" y2="16"/>
+                        </svg>
+                        📷 Scan Barcode Produk
+                    </button>
+                    <div id="scan-dulu-result" style="display:none;margin-top:10px;padding:10px 12px;border-radius:9px;font-size:13px;line-height:1.6;"></div>
+                    <div style="margin-top:8px;font-size:11px;color:var(--ink3);text-align:center;">atau langsung isi form di bawah jika tidak ada barcode</div>
+                </div>
+
                 <!-- Nama Produk — field utama, besar -->
                 <div style="margin-bottom:10px;">
                     <label style="display:block;font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;">Nama Produk</label>
@@ -2950,6 +2968,8 @@ function clearNewProductForm() {
     var resultDiv = document.getElementById('barcode-check-result');
     resultDiv.style.display = 'none';
     document.getElementById('new-barcode').style.borderColor = '';
+    var scanDuluResult = document.getElementById('scan-dulu-result');
+    if (scanDuluResult) { scanDuluResult.style.display = 'none'; }
 }
 
 function syncProductKadaluarsa(productId) {
@@ -3421,7 +3441,51 @@ function handleBarcode(code) {
     document.getElementById('scanner-result').textContent = '✅ Terdeteksi: ' + code;
     document.getElementById('scanner-result').className = 'scanner-result found';
 
-    if (scannerMode === 'gudang-input') {
+    if (scannerMode === 'tambah-scan-dulu') {
+        closeScanner();
+        var resultPanel = document.getElementById('scan-dulu-result');
+        var found = null, foundId = null;
+        for (var xid in productsData) {
+            if (productsData[xid].barcode === code) { found = productsData[xid]; foundId = xid; break; }
+        }
+        if (found) {
+            var stockColor = found.stock === 0 ? 'var(--red)' : found.stock <= 5 ? 'var(--amber)' : 'var(--green)';
+            var stockTxt = found.stock === 0 ? '⛔ Stok Habis' : '📦 Stok: ' + found.stock + ' pcs';
+            resultPanel.style.background = '#e6fcf5';
+            resultPanel.style.border = '1.5px solid #b2f2bb';
+            resultPanel.style.color = 'var(--ink)';
+            resultPanel.innerHTML =
+                '<div style="font-weight:700;font-size:14px;color:#0ca678;margin-bottom:4px;">✅ Produk sudah terdaftar!</div>' +
+                '<div style="font-weight:600;">' + found.name + '</div>' +
+                '<div style="font-size:12px;color:var(--ink2);">💰 Rp ' + (found.price||0).toLocaleString('id-ID') + ' &nbsp;|&nbsp; <span style="color:' + stockColor + ';">' + stockTxt + '</span></div>' +
+                '<div style="font-size:11px;color:var(--ink3);margin-top:2px;">🔖 Barcode: ' + code + '</div>' +
+                '<div style="display:flex;gap:6px;margin-top:10px;">' +
+                    '<button onclick="quickRestock(\'' + foundId + '\')" style="flex:1;padding:8px;background:#0ca678;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;">📥 Restock Stok</button>' +
+                    '<button onclick="openEditModal(\'' + foundId + '\')" style="flex:1;padding:8px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;">✏️ Edit Produk</button>' +
+                '</div>';
+            resultPanel.style.display = 'block';
+            // Also fill barcode field and scroll into result
+            document.getElementById('new-barcode').value = code;
+            document.getElementById('new-barcode').style.borderColor = '#0ca678';
+            showToast('✅ ' + found.name + ' — sudah ada di database', 'success');
+        } else {
+            resultPanel.style.background = '#fff9db';
+            resultPanel.style.border = '1.5px solid #ffe066';
+            resultPanel.style.color = 'var(--ink)';
+            resultPanel.innerHTML =
+                '<div style="font-weight:700;font-size:14px;color:#b07d00;margin-bottom:4px;">🆕 Produk belum terdaftar!</div>' +
+                '<div style="font-size:12px;color:var(--ink2);">Barcode: <b>' + code + '</b></div>' +
+                '<div style="font-size:12px;color:var(--ink3);margin-top:2px;">Barcode sudah diisi otomatis. Lengkapi data produk di form bawah, lalu simpan.</div>';
+            resultPanel.style.display = 'block';
+            // Fill barcode & focus name
+            document.getElementById('new-barcode').value = code;
+            document.getElementById('new-barcode').style.borderColor = '#f59f00';
+            document.getElementById('barcode-check-result').style.display = 'none';
+            setTimeout(function() { document.getElementById('new-name').focus(); }, 150);
+            showToast('🆕 Barcode baru — silakan lengkapi form!', 'success');
+        }
+    }
+    else if (scannerMode === 'gudang-input') {
         document.getElementById('new-barcode').value = code;
         _checkBarcode(code);
         closeScanner();
