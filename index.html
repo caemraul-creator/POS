@@ -1342,7 +1342,7 @@
 <div id="role-screen">
     <p class="role-logo">POS SYSTEM</p>
     <h1 class="role-title">Pilih Mode</h1>
-    <p class="role-subtitle">Masuk sebagai Kasir atau petugas Gudang</p>
+    <p class="role-subtitle">Pilih akses sesuai kebutuhan</p>
     <div class="role-cards">
         <div class="role-card" id="btn-kasir">
             <div class="icon">📲</div>
@@ -1350,9 +1350,14 @@
             <div class="desc">Transaksi & Pembayaran</div>
         </div>
         <div class="role-card" id="btn-gudang">
-            <div class="icon">📦</div>
+            <div class="icon">🏪</div>
             <div class="label">GUDANG</div>
-            <div class="desc">Kelola Produk & Stok</div>
+            <div class="desc">Restock & Monitor Stok</div>
+        </div>
+        <div class="role-card" id="btn-produk" onclick="window.location.href='produk.html'">
+            <div class="icon">📦</div>
+            <div class="label">PRODUK</div>
+            <div class="desc">Tambah &amp; Kelola Produk</div>
         </div>
     </div>
     <div class="conn-chip" id="conn-status">⏳ Menghubungkan ke database...</div>
@@ -1524,24 +1529,6 @@
 
             <!-- ======= TAB: TAMBAH PRODUK ======= -->
             <div id="form-tambah" class="form-scroll" style="padding:14px 16px;">
-
-                <!-- ===== SCAN DULU PANEL ===== -->
-                <div id="scan-dulu-panel" style="background:#eef2ff;border:2px dashed #4c6ef5;border-radius:12px;padding:14px 16px;margin-bottom:14px;">
-                    <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
-                        🚀 Langkah 1 — Scan barcode produk dulu
-                    </div>
-                    <button onclick="openScanner('tambah-scan-dulu')"
-                        style="width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;letter-spacing:0.3px;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:20px;height:20px">
-                            <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
-                            <line x1="7" y1="8" x2="7" y2="16"/><line x1="10" y1="8" x2="10" y2="16"/>
-                            <line x1="13" y1="8" x2="13" y2="16"/><line x1="16" y1="8" x2="16" y2="16"/>
-                        </svg>
-                        📷 Scan Barcode Produk
-                    </button>
-                    <div id="scan-dulu-result" style="display:none;margin-top:10px;padding:10px 12px;border-radius:9px;font-size:13px;line-height:1.6;"></div>
-                    <div style="margin-top:8px;font-size:11px;color:var(--ink3);text-align:center;">atau langsung isi form di bawah jika tidak ada barcode</div>
-                </div>
 
                 <!-- Nama Produk — field utama, besar -->
                 <div style="margin-bottom:10px;">
@@ -2968,8 +2955,6 @@ function clearNewProductForm() {
     var resultDiv = document.getElementById('barcode-check-result');
     resultDiv.style.display = 'none';
     document.getElementById('new-barcode').style.borderColor = '';
-    var scanDuluResult = document.getElementById('scan-dulu-result');
-    if (scanDuluResult) { scanDuluResult.style.display = 'none'; }
 }
 
 function syncProductKadaluarsa(productId) {
@@ -3441,48 +3426,27 @@ function handleBarcode(code) {
     document.getElementById('scanner-result').textContent = '✅ Terdeteksi: ' + code;
     document.getElementById('scanner-result').className = 'scanner-result found';
 
-    if (scannerMode === 'tambah-scan-dulu') {
+    if (scannerMode === 'tp-scan') {
         closeScanner();
-        var resultPanel = document.getElementById('scan-dulu-result');
+        tpShowScanResult(code);
+    }
+    else if (scannerMode === 'tp-input') {
+        document.getElementById('tp-barcode').value = code;
+        closeScanner();
+        showToast('Barcode: ' + code, 'success');
+    }
+    else if (scannerMode === 'tp-restock-scan') {
+        closeScanner();
         var found = null, foundId = null;
-        for (var xid in productsData) {
-            if (productsData[xid].barcode === code) { found = productsData[xid]; foundId = xid; break; }
+        for (var rid in productsData) {
+            if (productsData[rid].barcode === code) { found = productsData[rid]; foundId = rid; break; }
         }
         if (found) {
-            var stockColor = found.stock === 0 ? 'var(--red)' : found.stock <= 5 ? 'var(--amber)' : 'var(--green)';
-            var stockTxt = found.stock === 0 ? '⛔ Stok Habis' : '📦 Stok: ' + found.stock + ' pcs';
-            resultPanel.style.background = '#e6fcf5';
-            resultPanel.style.border = '1.5px solid #b2f2bb';
-            resultPanel.style.color = 'var(--ink)';
-            resultPanel.innerHTML =
-                '<div style="font-weight:700;font-size:14px;color:#0ca678;margin-bottom:4px;">✅ Produk sudah terdaftar!</div>' +
-                '<div style="font-weight:600;">' + found.name + '</div>' +
-                '<div style="font-size:12px;color:var(--ink2);">💰 Rp ' + (found.price||0).toLocaleString('id-ID') + ' &nbsp;|&nbsp; <span style="color:' + stockColor + ';">' + stockTxt + '</span></div>' +
-                '<div style="font-size:11px;color:var(--ink3);margin-top:2px;">🔖 Barcode: ' + code + '</div>' +
-                '<div style="display:flex;gap:6px;margin-top:10px;">' +
-                    '<button onclick="quickRestock(\'' + foundId + '\')" style="flex:1;padding:8px;background:#0ca678;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;">📥 Restock Stok</button>' +
-                    '<button onclick="openEditModal(\'' + foundId + '\')" style="flex:1;padding:8px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;">✏️ Edit Produk</button>' +
-                '</div>';
-            resultPanel.style.display = 'block';
-            // Also fill barcode field and scroll into result
-            document.getElementById('new-barcode').value = code;
-            document.getElementById('new-barcode').style.borderColor = '#0ca678';
-            showToast('✅ ' + found.name + ' — sudah ada di database', 'success');
+            tpSelectRestock(foundId);
+            setTimeout(function() { document.getElementById('tp-restock-qty').focus(); }, 100);
+            showToast('✅ ' + found.name + ' — masukkan jumlah', 'success');
         } else {
-            resultPanel.style.background = '#fff9db';
-            resultPanel.style.border = '1.5px solid #ffe066';
-            resultPanel.style.color = 'var(--ink)';
-            resultPanel.innerHTML =
-                '<div style="font-weight:700;font-size:14px;color:#b07d00;margin-bottom:4px;">🆕 Produk belum terdaftar!</div>' +
-                '<div style="font-size:12px;color:var(--ink2);">Barcode: <b>' + code + '</b></div>' +
-                '<div style="font-size:12px;color:var(--ink3);margin-top:2px;">Barcode sudah diisi otomatis. Lengkapi data produk di form bawah, lalu simpan.</div>';
-            resultPanel.style.display = 'block';
-            // Fill barcode & focus name
-            document.getElementById('new-barcode').value = code;
-            document.getElementById('new-barcode').style.borderColor = '#f59f00';
-            document.getElementById('barcode-check-result').style.display = 'none';
-            setTimeout(function() { document.getElementById('new-name').focus(); }, 150);
-            showToast('🆕 Barcode baru — silakan lengkapi form!', 'success');
+            showToast('⚠ Barcode tidak ditemukan. Tambah produk baru dulu.', 'error');
         }
     }
     else if (scannerMode === 'gudang-input') {
@@ -3834,7 +3798,202 @@ document.addEventListener('click', function(e) {
             dd.classList.add('hidden');
         }
     }
+    if (!e.target.closest('#tp-restock-search') && !e.target.closest('#tp-restock-dropdown')) {
+        var dd2 = document.getElementById('tp-restock-dropdown');
+        if (dd2) dd2.classList.add('hidden');
+    }
 });
+
+// ========== TAMBAH PRODUK SCREEN ==========
+var _tpRestockSelectedId = null;
+var _tpScanLog = [];
+
+function tpSwitchTab(tab) {
+    ['scan','tambah','restock'].forEach(function(t) {
+        var btn = document.getElementById('tp-tab-' + t);
+        var content = document.getElementById('tp-content-' + t);
+        if (!btn || !content) return;
+        var active = t === tab;
+        btn.style.background    = active ? '#e6fcf5' : 'var(--surface)';
+        btn.style.color         = active ? '#0ca678' : 'var(--ink3)';
+        btn.style.borderBottom  = active ? '2.5px solid #0ca678' : '2.5px solid transparent';
+        btn.style.fontWeight    = active ? '700' : '600';
+        content.style.display   = active ? '' : 'none';
+    });
+}
+
+function tpCekBarcode() {
+    var code = (document.getElementById('tp-manual-barcode').value || '').trim();
+    if (!code) { showToast('Ketik kode barcode dulu', 'error'); return; }
+    tpShowScanResult(code);
+}
+
+function tpShowScanResult(code) {
+    var resultDiv = document.getElementById('tp-scan-result');
+    var found = null, foundId = null;
+    for (var xid in productsData) {
+        if (productsData[xid].barcode === code) { found = productsData[xid]; foundId = xid; break; }
+    }
+
+    resultDiv.style.display = 'block';
+
+    if (found) {
+        var sc = found.stock;
+        var scColor = sc === 0 ? 'var(--red)' : sc <= 5 ? 'var(--amber)' : 'var(--green)';
+        var scTxt   = sc === 0 ? '⛔ Stok Habis' : '📦 Stok: ' + sc + ' pcs';
+        resultDiv.style.background = '#e6fcf5';
+        resultDiv.style.border = '1.5px solid #b2f2bb';
+        resultDiv.innerHTML =
+            '<div style="font-weight:700;font-size:15px;color:#0ca678;margin-bottom:6px;">✅ Produk sudah terdaftar!</div>' +
+            '<div style="font-weight:600;font-size:15px;color:var(--ink);margin-bottom:4px;">' + found.name + '</div>' +
+            '<div style="font-size:13px;color:var(--ink2);margin-bottom:2px;">💰 Rp ' + (found.price||0).toLocaleString('id-ID') + '&nbsp;&nbsp;<span style="color:' + scColor + ';">' + scTxt + '</span></div>' +
+            '<div style="font-size:11px;color:var(--ink3);">🔖 ' + code + '</div>' +
+            '<div style="display:flex;gap:8px;margin-top:12px;">' +
+                '<button onclick="tpGoRestock(\'' + foundId + '\')" style="flex:1;padding:10px;background:#0ca678;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;">📥 Restock</button>' +
+                '<button onclick="openEditModal(\'' + foundId + '\')" style="flex:1;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;">✏️ Edit</button>' +
+            '</div>';
+        tpAddScanLog(found.name, code, 'found');
+    } else {
+        resultDiv.style.background = '#fff9db';
+        resultDiv.style.border = '1.5px solid #ffe066';
+        resultDiv.innerHTML =
+            '<div style="font-weight:700;font-size:15px;color:#b07d00;margin-bottom:6px;">🆕 Produk belum terdaftar</div>' +
+            '<div style="font-size:13px;color:var(--ink2);margin-bottom:2px;">Barcode: <b>' + code + '</b></div>' +
+            '<div style="font-size:12px;color:var(--ink3);margin-bottom:12px;">Produk ini belum ada di database. Tambahkan sebagai produk baru?</div>' +
+            '<button onclick="tpGoTambahBaru(\'' + code + '\')" style="width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;">➕ Tambah Produk Baru</button>';
+        tpAddScanLog('Barcode: ' + code, code, 'new');
+    }
+    document.getElementById('tp-manual-barcode').value = '';
+}
+
+function tpAddScanLog(name, code, status) {
+    _tpScanLog.unshift({ name: name, code: code, status: status, time: new Date() });
+    if (_tpScanLog.length > 10) _tpScanLog.pop();
+    var wrap = document.getElementById('tp-scan-log-wrap');
+    var logEl = document.getElementById('tp-scan-log');
+    if (!wrap || !logEl) return;
+    wrap.style.display = '';
+    logEl.innerHTML = '';
+    _tpScanLog.forEach(function(item) {
+        var pad = function(n) { return n.toString().padStart(2,'0'); };
+        var timeStr = pad(item.time.getHours()) + ':' + pad(item.time.getMinutes());
+        var color = item.status === 'found' ? '#0ca678' : '#b07d00';
+        var icon  = item.status === 'found' ? '✅' : '🆕';
+        var div = document.createElement('div');
+        div.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;';
+        div.innerHTML = '<span style="font-size:13px;color:' + color + ';">' + icon + ' ' + item.name + '</span>' +
+            '<span style="font-size:11px;color:var(--ink3);font-family:\'DM Mono\',monospace;">' + timeStr + '</span>';
+        logEl.appendChild(div);
+    });
+}
+
+function tpGoTambahBaru(barcode) {
+    tpSwitchTab('tambah');
+    document.getElementById('tp-barcode').value = barcode || '';
+    setTimeout(function() { document.getElementById('tp-name').focus(); }, 100);
+    showToast('Lengkapi data produk baru', 'success');
+}
+
+function tpGoRestock(productId) {
+    tpSwitchTab('restock');
+    tpSelectRestock(productId);
+    setTimeout(function() { document.getElementById('tp-restock-qty').focus(); }, 100);
+}
+
+function tpSimpanProduk() {
+    var name    = document.getElementById('tp-name').value.trim();
+    var price   = parseRp(document.getElementById('tp-price').value);
+    var stock   = parseInt(document.getElementById('tp-stock').value);
+    var hpp     = parseRp(document.getElementById('tp-hpp').value);
+    var barcode = document.getElementById('tp-barcode').value.trim();
+    var kdl     = document.getElementById('tp-kadaluarsa').value;
+    if (!name || !price || isNaN(stock)) { showToast('Lengkapi nama, harga & stok!', 'error'); return; }
+
+    var existingId = Object.keys(productsData).find(function(id) {
+        return productsData[id].name.toLowerCase().trim() === name.toLowerCase();
+    });
+    if (existingId) {
+        if (!confirm('"' + name + '" sudah ada (stok: ' + productsData[existingId].stock + '). Tambah stok ke produk ini?')) return;
+        productsRef.child(existingId + '/stock').transaction(function(s) { return (s||0) + stock; });
+        showToast('✅ Stok ditambahkan!', 'success');
+        tpClearForm();
+        return;
+    }
+
+    var data = { name: name, price: price, stock: stock };
+    if (barcode) data.barcode = barcode;
+    if (hpp > 0) data.hpp = hpp;
+    if (kdl) { data.kadaluarsa = kdl; data.batches = { b0: { kadaluarsa: kdl, stock: stock } }; }
+    productsRef.push(data).then(function() {
+        showToast('✅ Produk berhasil ditambahkan!', 'success');
+        tpClearForm();
+    }).catch(function(e) { showToast('Gagal: ' + e.message, 'error'); });
+}
+
+function tpClearForm() {
+    ['tp-name','tp-price','tp-hpp','tp-stock','tp-barcode'].forEach(function(id) {
+        var el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('tp-kadaluarsa').value = '';
+}
+
+function tpFilterRestock() {
+    var q = (document.getElementById('tp-restock-search').value || '').toLowerCase().trim();
+    var dd = document.getElementById('tp-restock-dropdown');
+    if (!q) { dd.classList.add('hidden'); dd.innerHTML = ''; return; }
+    var matches = Object.keys(productsData).filter(function(id) {
+        var p = productsData[id];
+        return p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q));
+    }).slice(0, 8);
+    if (matches.length === 0) {
+        dd.classList.remove('hidden');
+        dd.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--ink3);">Produk tidak ditemukan</div>';
+        return;
+    }
+    dd.classList.remove('hidden');
+    dd.innerHTML = '';
+    matches.forEach(function(id) {
+        var p = productsData[id];
+        var div = document.createElement('div');
+        div.style.cssText = 'padding:11px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);cursor:pointer;';
+        div.innerHTML = '<div><div style="font-size:14px;font-weight:600;color:var(--ink);">' + p.name + '</div>' +
+            '<div style="font-size:11px;color:var(--ink3);">Stok: ' + p.stock + '</div></div>';
+        div.onmouseover = function() { this.style.background = 'var(--surface2)'; };
+        div.onmouseout  = function() { this.style.background = ''; };
+        div.onclick = function() { tpSelectRestock(id); dd.classList.add('hidden'); document.getElementById('tp-restock-search').value = ''; };
+        dd.appendChild(div);
+    });
+}
+
+function tpSelectRestock(id) {
+    _tpRestockSelectedId = id;
+    var p = productsData[id];
+    document.getElementById('tp-restock-selected').style.display = '';
+    document.getElementById('tp-restock-nama').textContent = p.name;
+    document.getElementById('tp-restock-stok-kini').textContent = p.stock;
+    document.getElementById('tp-restock-qty').value = '';
+    document.getElementById('tp-restock-kdl').value = '';
+}
+
+function tpDoRestock() {
+    if (!_tpRestockSelectedId) { showToast('Pilih produk dulu!', 'error'); return; }
+    var qty = parseInt(document.getElementById('tp-restock-qty').value) || 0;
+    var kdl = document.getElementById('tp-restock-kdl').value;
+    if (qty <= 0) { showToast('Masukkan jumlah stok!', 'error'); return; }
+    var productId = _tpRestockSelectedId;
+    if (kdl) {
+        productsRef.child(productId + '/batches').push({ stock: qty, kadaluarsa: kdl });
+        syncProductKadaluarsa(productId);
+    }
+    productsRef.child(productId + '/stock').transaction(function(s) { return (s||0) + qty; });
+    showToast('✅ Stok ditambahkan! (+' + qty + ' pcs)', 'success');
+    _tpRestockSelectedId = null;
+    document.getElementById('tp-restock-selected').style.display = 'none';
+    document.getElementById('tp-restock-qty').value = '';
+    document.getElementById('tp-restock-kdl').value = '';
+    document.getElementById('tp-restock-search').value = '';
+}
+
 </script>
 </body>
 </html>
