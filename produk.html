@@ -56,7 +56,6 @@
             min-height: calc(100vh - 56px);
         }
 
-        /* LEFT PANEL - FORM */
         .panel-left {
             width: 420px;
             background: var(--surface);
@@ -130,8 +129,18 @@
             margin-top: 8px;
         }
         .btn-save:hover { background: var(--accent2); }
+        .btn-scan {
+            padding: 11px 15px;
+            background: var(--amber);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .btn-scan:hover { background: #e67700; }
 
-        /* RIGHT PANEL */
         .panel-right {
             flex: 1;
             display: flex;
@@ -203,7 +212,7 @@
             align-items: center;
             justify-content: center;
             font-size: 36px;
-            background: var(--surface2);
+            background: #f8f9fc;
             border-radius: 10px;
             margin-bottom: 10px;
         }
@@ -247,7 +256,6 @@
             color: var(--ink3);
         }
 
-        /* MODAL */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -332,11 +340,10 @@
 </div>
 
 <div class="main-container">
-    <!-- LEFT PANEL -->
     <div class="panel-left">
         <div class="panel-header">
             <h2 id="form-title">➕ Tambah Produk Baru</h2>
-            <p>Kelola data produk (nama, harga, barcode, foto)</p>
+            <p>Scan barcode atau isi manual</p>
         </div>
         <div class="form-scroll">
             <input type="hidden" id="edit-id" value="">
@@ -372,7 +379,7 @@
                 <label>Barcode</label>
                 <div style="display:flex; gap:8px;">
                     <input type="text" id="product-barcode" placeholder="Scan atau ketik barcode" style="flex:1;">
-                    <button type="button" class="barcode-btn" onclick="openBarcodeScanner()" style="padding:0 15px; background:var(--amber); color:#fff; border:none; border-radius:10px; cursor:pointer;">📷 Scan</button>
+                    <button type="button" class="btn-scan" onclick="openBarcodeScanner('produk')">📷 Scan</button>
                 </div>
                 <div id="barcode-check-result" style="font-size:11px; margin-top:5px; display:none;"></div>
             </div>
@@ -411,13 +418,13 @@
         </div>
     </div>
 
-    <!-- RIGHT PANEL -->
     <div class="panel-right">
         <div class="search-bar">
             <div class="search-wrap">
                 <span class="search-icon">🔍</span>
                 <input type="text" class="search-input" id="search-product" placeholder="Cari produk..." oninput="renderProductList()">
             </div>
+            <button class="btn-scan" onclick="openBarcodeScanner('cari')" style="background:var(--accent);">📷 Cari via Barcode</button>
         </div>
         <div class="product-scroll">
             <div class="product-grid" id="product-grid">
@@ -452,7 +459,10 @@
             </div>
             <div class="form-group">
                 <label>Barcode</label>
-                <input type="text" id="edit-modal-barcode">
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="edit-modal-barcode" style="flex:1;">
+                    <button class="btn-scan" onclick="openBarcodeScanner('edit')" style="padding:8px 12px;">📷 Scan</button>
+                </div>
             </div>
             <div class="form-group">
                 <label>Kadaluarsa</label>
@@ -485,13 +495,14 @@
     <div class="modal-box" style="max-width:400px;">
         <div class="modal-header">
             <h3>📷 Scan Barcode</h3>
-            <button class="modal-close" onclick="closeScanner()">✕</button>
+            <button class="modal-close" onclick="closeScanner()" style="width:30px; height:30px; border-radius:8px; border:1.5px solid var(--border); background:var(--bg); cursor:pointer;">✕</button>
         </div>
         <div style="position:relative; background:#000; min-height:300px;">
             <video id="scanner-video" autoplay playsinline style="width:100%;"></video>
             <div style="position:absolute; top:50%; left:10%; right:10%; height:2px; background:#4c6ef5; animation: scan 2s ease-in-out infinite;"></div>
+            <div style="position:absolute; inset:10%; border:2px solid rgba(255,255,255,0.3); border-radius:12px; pointer-events:none;"></div>
         </div>
-        <div class="modal-body" id="scanner-result" style="text-align:center; color:var(--ink3);">Arahkan kamera ke barcode...</div>
+        <div id="scanner-result" style="padding:12px; text-align:center; color:var(--ink3);">Arahkan kamera ke barcode...</div>
     </div>
 </div>
 
@@ -499,7 +510,6 @@
 
 <style>
     @keyframes scan { 0%, 100% { top: 20%; } 50% { top: 80%; } }
-    .surface2 { background: #f8f9fc; }
 </style>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -513,6 +523,7 @@ var db, productsRef;
 var productsData = {};
 var editImageData = null;
 var scannerStream = null;
+var scannerCallback = null;
 
 try {
     firebase.initializeApp(firebaseConfig);
@@ -553,7 +564,8 @@ function renderProductList() {
     var keys = Object.keys(productsData);
     
     var filtered = keys.filter(function(id) {
-        return productsData[id].name.toLowerCase().includes(search);
+        var p = productsData[id];
+        return p.name.toLowerCase().includes(search) || (p.barcode && p.barcode.toLowerCase().includes(search));
     });
     
     filtered.sort(function(a, b) {
@@ -611,11 +623,11 @@ function previewImage(event) {
 }
 
 function checkBarcodeExists(barcode) {
-    if (!barcode) return false;
+    if (!barcode) return null;
     for (var id in productsData) {
-        if (productsData[id].barcode === barcode) return true;
+        if (productsData[id].barcode === barcode) return { id: id, product: productsData[id] };
     }
-    return false;
+    return null;
 }
 
 function saveProduct() {
@@ -634,8 +646,9 @@ function saveProduct() {
         return;
     }
     
-    if (barcode && checkBarcodeExists(barcode) && !editId) {
-        showToast('Barcode sudah digunakan!', 'error');
+    var existing = checkBarcodeExists(barcode);
+    if (barcode && existing && !editId) {
+        showToast('Barcode sudah digunakan oleh: ' + existing.product.name, 'error');
         return;
     }
     
@@ -715,6 +728,12 @@ function updateProductFromModal() {
         return;
     }
     
+    var existing = checkBarcodeExists(barcode);
+    if (barcode && existing && existing.id !== id) {
+        showToast('Barcode sudah digunakan oleh: ' + existing.product.name, 'error');
+        return;
+    }
+    
     var data = { name: name, price: price, stock: stock, updated_at: Date.now() };
     if (barcode) data.barcode = barcode;
     if (expiry) data.kadaluarsa = expiry;
@@ -737,14 +756,19 @@ function deleteProduct(id) {
 }
 
 // ========== BARCODE SCANNER ==========
-function openBarcodeScanner() {
+function openBarcodeScanner(mode) {
+    scannerCallback = mode;
     document.getElementById('scanner-modal').classList.remove('hidden');
+    document.getElementById('scanner-result').innerHTML = 'Arahkan kamera ke barcode...';
     startCamera();
 }
 
 function closeScanner() {
     document.getElementById('scanner-modal').classList.add('hidden');
-    stopCamera();
+    if (scannerStream) {
+        scannerStream.getTracks().forEach(function(t) { t.stop(); });
+        scannerStream = null;
+    }
 }
 
 function startCamera() {
@@ -765,43 +789,77 @@ function startCamera() {
         });
 }
 
-function stopCamera() {
-    if (scannerStream) {
-        scannerStream.getTracks().forEach(function(t) { t.stop(); });
-        scannerStream = null;
-    }
-}
-
 function startBarcodeDetection(video) {
     if (typeof ZXing !== 'undefined') {
         var codeReader = new ZXing.BrowserMultiFormatReader();
         codeReader.decodeFromVideoElement(video, function(result, err) {
             if (result) {
                 codeReader.reset();
-                var barcode = result.getText();
-                document.getElementById('product-barcode').value = barcode;
-                closeScanner();
-                showToast('Barcode: ' + barcode, 'success');
+                handleBarcodeResult(result.getText());
             }
         });
     } else if ('BarcodeDetector' in window) {
-        var detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'code_128'] });
+        var detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'code_128', 'code_39'] });
         function detect() {
             if (!scannerStream) return;
             detector.detect(video).then(function(barcodes) {
                 if (barcodes.length > 0) {
-                    document.getElementById('product-barcode').value = barcodes[0].rawValue;
-                    closeScanner();
-                    showToast('Barcode: ' + barcodes[0].rawValue, 'success');
+                    handleBarcodeResult(barcodes[0].rawValue);
                 } else {
                     requestAnimationFrame(detect);
                 }
             }).catch(function() { requestAnimationFrame(detect); });
         }
         video.onloadedmetadata = function() { detect(); };
+        if (video.readyState >= 2) detect();
     } else {
-        document.getElementById('scanner-result').innerHTML = '⚠ Browser tidak mendukung scan otomatis';
+        document.getElementById('scanner-result').innerHTML = '⚠ Browser tidak mendukung scan otomatis. Ketik manual.';
     }
+}
+
+function handleBarcodeResult(barcode) {
+    document.getElementById('scanner-result').innerHTML = '✅ Terdeteksi: ' + barcode;
+    
+    if (scannerCallback === 'produk') {
+        // Scan untuk input barcode di form tambah produk
+        document.getElementById('product-barcode').value = barcode;
+        var existing = checkBarcodeExists(barcode);
+        var resultDiv = document.getElementById('barcode-check-result');
+        if (existing) {
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = '#fff3bf';
+            resultDiv.style.padding = '6px 10px';
+            resultDiv.style.borderRadius = '6px';
+            resultDiv.style.color = '#b07d00';
+            resultDiv.innerHTML = '⚠️ Barcode sudah digunakan oleh: <strong>' + existing.product.name + '</strong>';
+        } else {
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = '#e6fcf5';
+            resultDiv.style.padding = '6px 10px';
+            resultDiv.style.borderRadius = '6px';
+            resultDiv.style.color = '#0ca678';
+            resultDiv.innerHTML = '✅ Barcode tersedia, bisa digunakan untuk produk baru';
+        }
+        showToast('Barcode: ' + barcode, 'success');
+        
+    } else if (scannerCallback === 'edit') {
+        // Scan untuk edit produk
+        document.getElementById('edit-modal-barcode').value = barcode;
+        showToast('Barcode: ' + barcode, 'success');
+        
+    } else if (scannerCallback === 'cari') {
+        // Scan untuk mencari produk
+        var found = checkBarcodeExists(barcode);
+        if (found) {
+            document.getElementById('search-product').value = found.product.name;
+            renderProductList();
+            showToast('Ditemukan: ' + found.product.name, 'success');
+        } else {
+            showToast('Barcode tidak ditemukan', 'error');
+        }
+    }
+    
+    setTimeout(function() { closeScanner(); }, 1500);
 }
 </script>
 </body>
