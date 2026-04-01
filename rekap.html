@@ -229,6 +229,28 @@
         }
         .toast .undo-btn:hover { background: var(--accent2); }
         @keyframes toastIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* LABA HARIAN */
+        .btn-ambil-laba {
+            padding: 8px 16px; background: var(--green); color: #fff; border: none;
+            border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+            font-weight: 700; cursor: pointer; transition: all 0.15s;
+        }
+        .btn-ambil-laba:hover { background: #099268; opacity: 0.9; }
+        .laba-taken-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 5px 12px; border-radius: 8px; background: #d3f9d8;
+            color: #099268; font-size: 12px; font-weight: 700;
+        }
+        .laba-taken-info {
+            font-size: 10px; color: var(--ink3); font-family: 'DM Mono', monospace;
+        }
+        .btn-batalkan-laba {
+            padding: 4px 10px; border-radius: 6px; border: 1px solid #ffd0d0;
+            background: #fff5f5; font-family: 'DM Sans', sans-serif; font-size: 11px;
+            font-weight: 600; cursor: pointer; color: var(--red); transition: all 0.15s;
+        }
+        .btn-batalkan-laba:hover { background: #ffe3e3; }
     </style>
 </head>
 <body>
@@ -251,6 +273,7 @@
         <span class="filter-label">Tampilan</span>
         <button class="mode-btn active" id="btn-bulanan" onclick="setMode('bulanan')">📅 Bulanan</button>
         <button class="mode-btn" id="btn-tahunan" onclick="setMode('tahunan')">📆 Tahunan</button>
+        <button class="mode-btn" id="btn-harian" onclick="setMode('harian')">💵 Laba Harian</button>
     </div>
     <div class="divider"></div>
     <!-- Filter Tahun -->
@@ -272,7 +295,7 @@
     </div>
     <div class="divider"></div>
     <!-- Filter Metode Pembayaran -->
-    <div class="filter-group">
+    <div class="filter-group" id="wrap-metode">
         <span class="filter-label">Metode</span>
         <select class="filter-select" id="sel-metode" onchange="render()">
             <option value="">Semua</option>
@@ -310,7 +333,9 @@
 var db, transaksiRef, productsRef;
 var allTransaksi = {};
 var allProducts = {};
-var mode = 'bulanan'; // 'bulanan' | 'tahunan'
+var mode = 'bulanan'; // 'bulanan' | 'tahunan' | 'harian'
+var labaDiambilRef;
+var labaDiambilData = {};
 var _renderTimeout = null; // Untuk debounce
 
 var BULAN_NAMA = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -330,6 +355,12 @@ try {
     productsRef.on('value', function(snap) {
         allProducts = snap.val() || {};
         render(); // Render ulang setelah produk dimuat (untuk laba)
+    });
+
+    labaDiambilRef = db.ref('laba_diambil');
+    labaDiambilRef.on('value', function(snap) {
+        labaDiambilData = snap.val() || {};
+        render();
     });
     
     transaksiRef.on('value', function(snap) {
@@ -371,7 +402,9 @@ function setMode(m) {
     mode = m;
     document.getElementById('btn-bulanan').classList.toggle('active', m === 'bulanan');
     document.getElementById('btn-tahunan').classList.toggle('active', m === 'tahunan');
-    document.getElementById('wrap-bulan').style.display = m === 'bulanan' ? 'flex' : 'none';
+    document.getElementById('btn-harian').classList.toggle('active', m === 'harian');
+    document.getElementById('wrap-bulan').style.display = (m === 'bulanan' || m === 'harian') ? 'flex' : 'none';
+    document.getElementById('wrap-metode').style.display = m === 'harian' ? 'none' : 'flex';
     render();
 }
 
@@ -398,6 +431,10 @@ function getFilteredTransactions(tahun, bulan, prevMode) {
 }
 
 function _render() {
+    if (mode === 'harian') {
+        _renderHarian();
+        return;
+    }
     var tahun = safeNumber(document.getElementById('sel-tahun').value);
     var bulan = safeNumber(document.getElementById('sel-bulan').value);
     var metode = document.getElementById('sel-metode').value;
@@ -804,6 +841,248 @@ function printRekap() {
     win.document.close();
     win.focus();
     setTimeout(function(){ win.print(); }, 400);
+}
+
+// ====== RENDER HARIAN (LABA) ======
+function _renderHarian() {
+    var tahun = safeNumber(document.getElementById('sel-tahun').value);
+    var bulan = safeNumber(document.getElementById('sel-bulan').value);
+    var content = document.getElementById('content');
+    if (!content) return;
+
+    // Get all transactions for this month
+    var monthlyTrx = Object.values(allTransaksi).filter(function(t) {
+        var tTahun = t.tahun || (t.timestamp ? new Date(t.timestamp).getFullYear() : null);
+        var tBulan = t.bulan || (t.timestamp ? new Date(t.timestamp).getMonth() + 1 : null);
+        return tTahun === tahun && tBulan === bulan;
+    });
+
+    // Group by day
+    var dailyMap = {};
+    monthlyTrx.forEach(function(t) {
+        var d = new Date(t.timestamp || 0);
+        var dayKey = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        if (!dailyMap[dayKey]) dailyMap[dayKey] = { trx: [], omzet: 0, laba: 0, count: 0 };
+        dailyMap[dayKey].trx.push(t);
+        dailyMap[dayKey].omzet += t.total || 0;
+        dailyMap[dayKey].count++;
+        // Calculate laba from items
+        if (t.items) {
+            t.items.forEach(function(item) {
+                var pid = item.id || item.product_id;
+                if (pid && allProducts[pid] && allProducts[pid].hpp) {
+                    var hpp = allProducts[pid].hpp;
+                    dailyMap[dayKey].laba += (item.subtotal || 0) - (hpp * (item.qty || 0));
+                }
+            });
+        }
+    });
+
+    // Sort days descending (newest first)
+    var days = Object.keys(dailyMap).sort().reverse();
+
+    // Calculate totals
+    var totalOmzetBulan = monthlyTrx.reduce(function(s,t){return s+(t.total||0);}, 0);
+    var totalLabaBulan = 0;
+    var totalSudahDiambil = 0;
+    var totalBelumDiambil = 0;
+    days.forEach(function(dayKey) {
+        var laba = dailyMap[dayKey].laba;
+        totalLabaBulan += laba;
+        if (labaDiambilData[dayKey]) {
+            totalSudahDiambil += laba;
+        } else {
+            totalBelumDiambil += laba;
+        }
+    });
+
+    var judul = '💵 Laba Harian — ' + BULAN_NAMA[bulan] + ' ' + tahun;
+
+    var HARI_NAMA = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+
+    // Build HTML
+    var html = '<p class="section-title">' + judul + '</p>';
+
+    // Summary cards
+    html += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-bottom:20px;">';
+    html += '<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;"><div style="font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Total Omzet</div><div style="font-family:DM Mono,monospace;font-size:18px;font-weight:700;color:var(--accent);">Rp ' + totalOmzetBulan.toLocaleString('id-ID') + '</div></div>';
+    html += '<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;"><div style="font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Total Laba Bulan Ini</div><div style="font-family:DM Mono,monospace;font-size:18px;font-weight:700;color:' + (totalLabaBulan >= 0 ? 'var(--green)' : 'var(--red)') + ';">Rp ' + totalLabaBulan.toLocaleString('id-ID') + '</div></div>';
+    html += '<div style="background:#e6fcf5;border:1.5px solid #b2f2bb;border-radius:12px;padding:16px;"><div style="font-size:10px;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">✅ Sudah Diambil</div><div style="font-family:DM Mono,monospace;font-size:18px;font-weight:700;color:var(--green);">Rp ' + totalSudahDiambil.toLocaleString('id-ID') + '</div></div>';
+    html += '<div style="background:#fff3bf;border:1.5px solid #ffe066;border-radius:12px;padding:16px;"><div style="font-size:10px;color:#b07d00;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">⏳ Belum Diambil</div><div style="font-family:DM Mono,monospace;font-size:18px;font-weight:700;color:#b07d00;">Rp ' + totalBelumDiambil.toLocaleString('id-ID') + '</div></div>';
+    html += '</div>';
+
+    // Update summary chips
+    document.getElementById('chip-transaksi').textContent = monthlyTrx.length + ' Transaksi';
+    document.getElementById('chip-omzet').textContent = 'Rp ' + totalOmzetBulan.toLocaleString('id-ID');
+    var labaChip = document.getElementById('chip-laba');
+    labaChip.style.display = '';
+    labaChip.textContent = 'Laba Rp ' + totalLabaBulan.toLocaleString('id-ID');
+    labaChip.style.background = totalLabaBulan >= 0 ? '#d3f9d8' : '#ffe3e3';
+    labaChip.style.color = totalLabaBulan >= 0 ? '#0ca678' : '#f03e3e';
+
+    // Ambil semua button
+    var belumDiambilDays = days.filter(function(d){ return !labaDiambilData[d] && dailyMap[d].laba !== 0; });
+    if (belumDiambilDays.length > 0) {
+        html += '<div style="margin-bottom:16px;text-align:right;"><button onclick="ambilSemuaLaba()" style="padding:10px 20px;background:var(--green);color:#fff;border:none;border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity 0.15s;">💰 Ambil Semua Laba (' + belumDiambilDays.length + ' hari)</button></div>';
+    }
+
+    if (days.length === 0) {
+        html += '<div class="empty-state"><div class="icon">📭</div><p>Tidak ada data penjualan untuk bulan ini.</p></div>';
+        content.innerHTML = html;
+        return;
+    }
+
+    // Daily cards
+    days.forEach(function(dayKey) {
+        var data = dailyMap[dayKey];
+        var d = new Date(dayKey + 'T12:00:00');
+        var hariNama = HARI_NAMA[d.getDay()];
+        var tglStr = d.getDate() + ' ' + BULAN_NAMA[d.getMonth()+1] + ' ' + d.getFullYear();
+        var isTaken = !!labaDiambilData[dayKey];
+        var labaColor = data.laba >= 0 ? 'var(--green)' : 'var(--red)';
+
+        html += '<div style="background:var(--surface);border:1.5px solid ' + (isTaken ? '#b2f2bb' : 'var(--border)') + ';border-radius:14px;padding:16px 20px;margin-bottom:10px;' + (isTaken ? 'background:#f6fff8;' : '') + '">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">';
+        html += '<div><div style="font-size:15px;font-weight:700;color:var(--ink);">' + hariNama + ', ' + tglStr + '</div>';
+        html += '<div style="font-size:12px;color:var(--ink3);">' + data.count + ' transaksi</div></div>';
+
+        if (isTaken) {
+            var takenData = labaDiambilData[dayKey];
+            var takenTime = takenData.diambil_pada ? new Date(takenData.diambil_pada) : null;
+            var timeStr = takenTime ? takenTime.getDate() + '/' + (takenTime.getMonth()+1) + '/' + takenTime.getFullYear() + ' ' + String(takenTime.getHours()).padStart(2,'0') + ':' + String(takenTime.getMinutes()).padStart(2,'0') : '—';
+            html += '<div style="display:flex;align-items:center;gap:8px;">';
+            html += '<span class="laba-taken-badge">✅ Sudah Diambil</span>';
+            html += '<span class="laba-taken-info">' + timeStr + '</span>';
+            html += '<button onclick="batalkanAmbilLaba(\'' + dayKey + '\')" class="btn-batalkan-laba">Batalkan</button>';
+            html += '</div>';
+        } else {
+            if (data.laba !== 0) {
+                html += '<button onclick="ambilLabaHarian(\'' + dayKey + '\')" class="btn-ambil-laba">💰 Ambil Laba</button>';
+            } else {
+                html += '<span style="font-size:11px;color:var(--ink3);font-style:italic;">Laba Rp 0</span>';
+            }
+        }
+
+        html += '</div>';
+
+        // Stats row
+        html += '<div style="display:flex;gap:16px;flex-wrap:wrap;">';
+        html += '<div><div style="font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase;">Omzet</div><div style="font-family:DM Mono,monospace;font-size:14px;font-weight:700;color:var(--accent);">Rp ' + data.omzet.toLocaleString('id-ID') + '</div></div>';
+        html += '<div><div style="font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase;">Laba</div><div style="font-family:DM Mono,monospace;font-size:14px;font-weight:700;color:' + labaColor + ';">Rp ' + data.laba.toLocaleString('id-ID') + '</div></div>';
+        html += '</div>';
+
+        html += '</div>';
+    });
+
+    content.innerHTML = html;
+}
+
+// ====== AMBIL LABA HARIAN ======
+function ambilLabaHarian(dayKey) {
+    if (!confirm('Ambil laba untuk tanggal ' + dayKey + '?\n\nData laba akan ditandai sebagai sudah diambil.')) return;
+
+    // Calculate laba for this day
+    var dayTrx = Object.values(allTransaksi).filter(function(t) {
+        var d = new Date(t.timestamp || 0);
+        var tKey = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        return tKey === dayKey;
+    });
+
+    var omzet = dayTrx.reduce(function(s,t){return s+(t.total||0);}, 0);
+    var laba = 0;
+    dayTrx.forEach(function(t) {
+        if (t.items) {
+            t.items.forEach(function(item) {
+                var pid = item.id || item.product_id;
+                if (pid && allProducts[pid] && allProducts[pid].hpp) {
+                    var hpp = allProducts[pid].hpp;
+                    laba += (item.subtotal || 0) - (hpp * (item.qty || 0));
+                }
+            });
+        }
+    });
+
+    labaDiambilRef.child(dayKey).set({
+        tanggal: dayKey,
+        jumlah: laba,
+        omzet: omzet,
+        trx_count: dayTrx.length,
+        diambil_pada: new Date().toISOString(),
+        diambil_oleh: 'Admin'
+    }).then(function() {
+        showToast('✅ Laba Rp ' + laba.toLocaleString('id-ID') + ' (' + dayKey + ') berhasil diambil!');
+    }).catch(function(e) {
+        showToast('❌ Gagal: ' + e.message);
+    });
+}
+
+// ====== BATALKAN AMBIL LABA ======
+function batalkanAmbilLaba(dayKey) {
+    if (!confirm('Batalkan pengambilan laba untuk ' + dayKey + '?')) return;
+    labaDiambilRef.child(dayKey).remove().then(function() {
+        showToast('↩ Pengambilan laba (' + dayKey + ') dibatalkan');
+    }).catch(function(e) {
+        showToast('❌ Gagal: ' + e.message);
+    });
+}
+
+// ====== AMBIL SEMUA LABA ======
+function ambilSemuaLaba() {
+    var tahun = safeNumber(document.getElementById('sel-tahun').value);
+    var bulan = safeNumber(document.getElementById('sel-bulan').value);
+
+    var monthlyTrx = Object.values(allTransaksi).filter(function(t) {
+        var tTahun = t.tahun || (t.timestamp ? new Date(t.timestamp).getFullYear() : null);
+        var tBulan = t.bulan || (t.timestamp ? new Date(t.timestamp).getMonth() + 1 : null);
+        return tTahun === tahun && tBulan === bulan;
+    });
+
+    var dailyMap = {};
+    monthlyTrx.forEach(function(t) {
+        var d = new Date(t.timestamp || 0);
+        var dayKey = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        if (!dailyMap[dayKey]) dailyMap[dayKey] = { omzet: 0, laba: 0, count: 0 };
+        dailyMap[dayKey].omzet += t.total || 0;
+        dailyMap[dayKey].count++;
+        if (t.items) {
+            t.items.forEach(function(item) {
+                var pid = item.id || item.product_id;
+                if (pid && allProducts[pid] && allProducts[pid].hpp) {
+                    var hpp = allProducts[pid].hpp;
+                    dailyMap[dayKey].laba += (item.subtotal || 0) - (hpp * (item.qty || 0));
+                }
+            });
+        }
+    });
+
+    var days = Object.keys(dailyMap).sort().reverse();
+    var toTake = days.filter(function(d){ return !labaDiambilData[d] && dailyMap[d].laba !== 0; });
+
+    if (toTake.length === 0) {
+        showToast('Semua laba sudah diambil!');
+        return;
+    }
+
+    if (!confirm('Ambil laba untuk ' + toTake.length + ' hari sekaligus?')) return;
+
+    var batch = {};
+    var now = new Date().toISOString();
+    toTake.forEach(function(dayKey) {
+        batch[dayKey] = {
+            tanggal: dayKey,
+            jumlah: dailyMap[dayKey].laba,
+            omzet: dailyMap[dayKey].omzet,
+            trx_count: dailyMap[dayKey].count,
+            diambil_pada: now,
+            diambil_oleh: 'Admin'
+        };
+    });
+
+    labaDiambilRef.update(batch).then(function() {
+        showToast('✅ Laba ' + toTake.length + ' hari berhasil diambil!');
+    }).catch(function(e) {
+        showToast('❌ Gagal: ' + e.message);
+    });
 }
 
 // ====== TOAST ======
