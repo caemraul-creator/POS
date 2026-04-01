@@ -37,7 +37,7 @@ var fiturConfig = {
     ppnEnabled: false,
     ppnRate: 11, // persen
     hutangEnabled: true,
-    maxHutangPerPelanggan: 5000000
+    maxHutangPerPelanggan: 500000
 };
 
 // ========== GLOBAL ALIASES ==========
