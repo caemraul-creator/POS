@@ -449,7 +449,7 @@ function _applyFilter() {
         var t = entry[1];
         var ts = t.timestamp || 0;
         if (ts < dariTs || ts > sampaiTs) return false;
-        if (metode && t.metode_bayar !== metode) return false;
+        if (metode && t.metode !== metode) return false;
         if (search) {
             var inItems = t.items && t.items.some(function(i) { return i.name.toLowerCase().includes(search); });
             var inPel = t.pelanggan_nama && t.pelanggan_nama.toLowerCase().includes(search);
@@ -484,7 +484,7 @@ function renderPaymentSummary() {
     var methods = { Tunai: { total: 0, count: 0 }, Transfer: { total: 0, count: 0 }, QRIS: { total: 0, count: 0 }, Kartu: { total: 0, count: 0 } };
     filteredList.forEach(function(entry) {
         var t = entry[1];
-        var m = t.metode_bayar || 'Tunai';
+        var m = t.metode || 'Tunai';
         if (methods[m]) {
             methods[m].total += t.total || 0;
             methods[m].count++;
@@ -534,7 +534,7 @@ function renderList() {
         var noStruk = id.slice(-8).toUpperCase();
         var dateStr = d.getDate() + ' ' + BULAN[d.getMonth()+1] + ' ' + d.getFullYear();
         var timeStr = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
-        var metode = t.metode_bayar || 'Tunai';
+        var metode = t.metode || 'Tunai';
         var methodKey = metode.toLowerCase().replace(' ','');
         var methodClass = 'method-' + methodKey;
         var preview = t.items ? t.items.slice(0,3).map(function(i){return i.name;}).join(', ') + (t.items.length > 3 ? ' +lainnya' : '') : '—';
@@ -599,33 +599,17 @@ function showDetail(id) {
     var itemRows = '';
     var items = t.items || [];
     items.forEach(function(item, i) {
-        if (item.grosir_qty > 0 && item.normal_qty > 0) {
-            itemRows += '<tr><td class="td-name">' + escHtml(item.name) + ' <span style="font-size:10px;background:#fff4e6;color:#f76707;padding:1px 5px;border-radius:3px;font-weight:700;">GROSIR</span></td>' +
-                '<td class="td-right">' + item.grosir_qty + '×</td>' +
-                '<td class="td-right">Rp ' + item.harga_grosir.toLocaleString('id-ID') + '</td>' +
-                '<td class="td-right">Rp ' + (item.grosir_qty * item.harga_grosir).toLocaleString('id-ID') + '</td>' +
-                '</tr>';
-            if (item.normal_qty > 0) {
-                itemRows += '<tr><td class="td-name">' + escHtml(item.name) + '</td>' +
-                    '<td class="td-right">' + item.normal_qty + '×</td>' +
-                    '<td class="td-right">Rp ' + item.harga_normal.toLocaleString('id-ID') + '</td>' +
-                    '<td class="td-right">Rp ' + (item.normal_qty * item.harga_normal).toLocaleString('id-ID') + '</td>' +
-                    '</tr>';
-            }
-        } else {
-            var harga = item.grosir_qty > 0 ? item.harga_grosir : item.harga_normal;
-            var suffix = item.grosir_qty > 0 ? ' <span style="font-size:10px;background:#fff4e6;color:#f76707;padding:1px 5px;border-radius:3px;font-weight:700;">GROSIR</span>' : '';
-            itemRows += '<tr><td class="td-name">' + escHtml(item.name) + suffix + '</td>' +
-                '<td class="td-right">' + item.qty + '×</td>' +
-                '<td class="td-right">Rp ' + harga.toLocaleString('id-ID') + '</td>' +
-                '<td class="td-right">Rp ' + item.subtotal.toLocaleString('id-ID') + '</td>' +
-                '</tr>';
-        }
+        var harga = item.price || item.harga_normal || item.harga_grosir || 0;
+        itemRows += '<tr><td class="td-name">' + escHtml(item.name) + '</td>' +
+            '<td class="td-right">' + (item.qty||0) + '×</td>' +
+            '<td class="td-right">Rp ' + harga.toLocaleString('id-ID') + '</td>' +
+            '<td class="td-right">Rp ' + (item.subtotal||0).toLocaleString('id-ID') + '</td>' +
+            '</tr>';
     });
 
     var payDetails = '';
-    if (t.metode_bayar === 'Tunai') {
-        payDetails = '<div class="detail-row"><span class="label">Uang Bayar</span><span class="value mono">Rp ' + (t.uang_bayar||0).toLocaleString('id-ID') + '</span></div>' +
+    if (t.metode === 'Tunai') {
+        payDetails = '<div class="detail-row"><span class="label">Uang Bayar</span><span class="value mono">Rp ' + (t.bayar||t.uang_bayar||0).toLocaleString('id-ID') + '</span></div>' +
             '<div class="detail-row"><span class="label">Kembalian</span><span class="value mono" style="color:var(--green)">Rp ' + (t.kembalian||0).toLocaleString('id-ID') + '</span></div>';
     }
 
@@ -635,7 +619,7 @@ function showDetail(id) {
         '<h4>Info Transaksi</h4>' +
         '<div class="detail-row"><span class="label">No. Struk</span><span class="value mono" style="color:var(--accent)">#' + noStruk + '</span></div>' +
         '<div class="detail-row"><span class="label">Waktu</span><span class="value">' + tglStr + '</span></div>' +
-        '<div class="detail-row"><span class="label">Metode</span><span class="value">' + (t.metode_bayar||'Tunai') + '</span></div>' +
+        '<div class="detail-row"><span class="label">Metode</span><span class="value">' + (t.metode||'Tunai') + '</span></div>' +
         (t.pelanggan_nama ? '<div class="detail-row"><span class="label">Pelanggan</span><span class="value">👤 ' + escHtml(t.pelanggan_nama) + '</span></div>' : '') +
         payDetails +
         '</div>' +
@@ -770,25 +754,17 @@ function shareWADetail(id) {
     lines.push('👤 ' + pelNama);
     lines.push('─'.repeat(28));
     items.forEach(function(item, i) {
-        if (item.grosir_qty > 0 && item.normal_qty > 0) {
-            lines.push((i+1) + '. ' + item.name + ' [GROSIR]');
-            lines.push('   ' + item.grosir_qty + ' × Rp ' + item.harga_grosir.toLocaleString('id-ID') + ' = Rp ' + (item.grosir_qty * item.harga_grosir).toLocaleString('id-ID'));
-            if (item.normal_qty > 0) {
-                lines.push('   ' + item.normal_qty + ' × Rp ' + item.harga_normal.toLocaleString('id-ID') + ' = Rp ' + (item.normal_qty * item.harga_normal).toLocaleString('id-ID'));
-            }
-        } else {
-            var harga = item.grosir_qty > 0 ? item.harga_grosir : item.harga_normal;
-            lines.push((i+1) + '. ' + item.name + (item.grosir_qty > 0 ? ' [GROSIR]' : ''));
-            lines.push('   ' + item.qty + ' × Rp ' + harga.toLocaleString('id-ID') + ' = Rp ' + item.subtotal.toLocaleString('id-ID'));
-        }
+        var harga = item.price || item.harga_normal || item.harga_grosir || 0;
+        lines.push((i+1) + '. ' + item.name);
+        lines.push('   ' + (item.qty||0) + ' × Rp ' + harga.toLocaleString('id-ID') + ' = Rp ' + (item.subtotal||0).toLocaleString('id-ID'));
     });
     lines.push('─'.repeat(28));
     lines.push('💰 *TOTAL: Rp ' + (t.total||0).toLocaleString('id-ID') + '*');
-    if (t.metode_bayar === 'Tunai') {
-        lines.push('💵 Bayar: Rp ' + (t.uang_bayar||0).toLocaleString('id-ID'));
+    if (t.metode === 'Tunai') {
+        lines.push('💵 Bayar: Rp ' + (t.bayar||t.uang_bayar||0).toLocaleString('id-ID'));
         lines.push('🔄 Kembali: Rp ' + (t.kembalian||0).toLocaleString('id-ID'));
     } else {
-        lines.push('💳 Metode: ' + t.metode_bayar);
+        lines.push('💳 Metode: ' + (t.metode||'Tunai'));
     }
     lines.push('─'.repeat(28));
     lines.push('✨ Terima kasih! Belanja lagi ya 🛍️');
@@ -811,13 +787,8 @@ function printDetail(id) {
     var itemRows = '';
     items.forEach(function(item, i) {
         var parts = [];
-        if (item.grosir_qty > 0 && item.normal_qty > 0) {
-            parts.push({ name: item.name + '[GROSIR]', qty: item.grosir_qty, harga: item.harga_grosir, sub: item.grosir_qty * item.harga_grosir });
-            if (item.normal_qty > 0) parts.push({ name: item.name, qty: item.normal_qty, harga: item.harga_normal, sub: item.normal_qty * item.harga_normal });
-        } else {
-            var h = item.grosir_qty > 0 ? item.harga_grosir : item.harga_normal;
-            parts.push({ name: item.name + (item.grosir_qty > 0 ? '[GROSIR]' : ''), qty: item.qty, harga: h, sub: item.subtotal });
-        }
+        var h = item.price || item.harga_normal || item.harga_grosir || 0;
+        parts.push({ name: item.name, qty: item.qty||0, harga: h, sub: item.subtotal||0 });
         parts.forEach(function(p, pi) {
             itemRows += '<tr><td colspan="3" style="padding:2px 0 0;font-size:10px;font-weight:700;text-transform:uppercase;">' + (i+pi+1) + '. ' + p.name + '</td></tr>';
             itemRows += '<tr><td style="padding:0 0 4px;font-size:12px;color:#444;">' + p.qty + ' X ' + p.harga.toLocaleString('id-ID') + '</td><td style="text-align:center;font-size:12px;font-weight:700;">=</td><td style="text-align:right;font-size:12px;font-weight:700;">Rp ' + p.sub.toLocaleString('id-ID') + '</td></tr>';
@@ -825,10 +796,11 @@ function printDetail(id) {
     });
 
     var pelLine = pelNama ? '<div style="font-size:11px;margin:2px 0;">Pelanggan: <b>' + pelNama + '</b></div>' : '';
-    var metodeRows = t.metode_bayar === 'Tunai'
-        ? '<tr><td style="font-size:12px;font-weight:700;">TUNAI</td><td style="text-align:center;font-weight:700;">=</td><td style="text-align:right;font-size:12px;font-weight:700;">Rp ' + (t.uang_bayar||0).toLocaleString('id-ID') + '</td></tr>' +
+    var metode = t.metode || 'Tunai';
+    var metodeRows = metode === 'Tunai'
+        ? '<tr><td style="font-size:12px;font-weight:700;">TUNAI</td><td style="text-align:center;font-weight:700;">=</td><td style="text-align:right;font-size:12px;font-weight:700;">Rp ' + (t.bayar||t.uang_bayar||0).toLocaleString('id-ID') + '</td></tr>' +
           '<tr><td style="font-size:12px;font-weight:700;">KEMBALI</td><td style="text-align:center;font-weight:900;">=</td><td style="text-align:right;font-size:12px;font-weight:900;">Rp ' + (t.kembalian||0).toLocaleString('id-ID') + '</td></tr>'
-        : '<tr><td style="font-size:12px;font-weight:700;">NET ' + t.metode_bayar.toUpperCase() + '</td><td style="text-align:center;">=</td><td style="text-align:right;font-size:12px;font-weight:800;">Rp ' + (t.total||0).toLocaleString('id-ID') + '</td></tr>';
+        : '<tr><td style="font-size:12px;font-weight:700;">NET ' + metode.toUpperCase() + '</td><td style="text-align:center;">=</td><td style="text-align:right;font-size:12px;font-weight:800;">Rp ' + (t.total||0).toLocaleString('id-ID') + '</td></tr>';
 
     var win = window.open('', '_blank', 'width=380,height=650,scrollbars=yes');
     if (!win) {

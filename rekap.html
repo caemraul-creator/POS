@@ -392,7 +392,7 @@ function getFilteredTransactions(tahun, bulan, prevMode) {
         if (prevMode === 'tahunan') return tTahun === tahun;
         return tTahun === tahun && tBulan === bulan;
     }).filter(function(t) {
-        if (metode && t.metode_bayar !== metode) return false;
+        if (metode && t.metode !== metode) return false;
         return true;
     });
 }
@@ -416,7 +416,7 @@ function _render() {
     var metodeFiltered = filtered;
     if (metode) {
         metodeFiltered = filtered.filter(function(t) {
-            return t.metode_bayar === metode;
+            return t.metode === metode;
         });
     }
 
@@ -430,8 +430,9 @@ function _render() {
             map[key].qty   += item.qty || 0;
             map[key].omzet += item.subtotal || 0;
             // Cari HPP dari products data
-            if (item.product_id && allProducts[item.product_id] && allProducts[item.product_id].hpp) {
-                var hpp = allProducts[item.product_id].hpp;
+            var pid = item.id || item.product_id;
+            if (pid && allProducts[pid] && allProducts[pid].hpp) {
+                var hpp = allProducts[pid].hpp;
                 map[key].laba += (item.subtotal || 0) - (hpp * (item.qty || 0));
                 map[key].hasHpp = true;
             }
@@ -468,7 +469,7 @@ function _render() {
         var prevFiltered = Object.values(allTransaksi).filter(function(t) {
             var tTahun = t.tahun || (t.timestamp ? new Date(t.timestamp).getFullYear() : null);
             var tBulan = t.bulan || (t.timestamp ? new Date(t.timestamp).getMonth() + 1 : null);
-            if (metode && t.metode_bayar !== metode) return false;
+            if (metode && t.metode !== metode) return false;
             return tTahun === prevTahun && tBulan === prevBulan;
         });
         prevOmzet = prevFiltered.reduce(function(s,t){return s+(t.total||0);}, 0);
@@ -477,7 +478,7 @@ function _render() {
         // Compare with previous year
         var prevFiltered = Object.values(allTransaksi).filter(function(t) {
             var tTahun = t.tahun || (t.timestamp ? new Date(t.timestamp).getFullYear() : null);
-            if (metode && t.metode_bayar !== metode) return false;
+            if (metode && t.metode !== metode) return false;
             return tTahun === (tahun - 1);
         });
         prevOmzet = prevFiltered.reduce(function(s,t){return s+(t.total||0);}, 0);
@@ -638,7 +639,7 @@ function exportCSV() {
         var tBulan = t.bulan || (t.timestamp ? new Date(t.timestamp).getMonth() + 1 : null);
         if (mode === 'tahunan') { if (tTahun !== tahun) return false; }
         else { if (tTahun !== tahun || tBulan !== bulan) return false; }
-        if (metode && t.metode_bayar !== metode) return false;
+        if (metode && t.metode !== metode) return false;
         return true;
     });
 
@@ -650,8 +651,9 @@ function exportCSV() {
             if (!map[key]) map[key] = { name: key, qty: 0, omzet: 0, laba: 0, hasHpp: false };
             map[key].qty   += item.qty || 0;
             map[key].omzet += item.subtotal || 0;
-            if (item.product_id && allProducts[item.product_id] && allProducts[item.product_id].hpp) {
-                var hpp = allProducts[item.product_id].hpp;
+            var pid = item.id || item.product_id;
+            if (pid && allProducts[pid] && allProducts[pid].hpp) {
+                var hpp = allProducts[pid].hpp;
                 map[key].laba += (item.subtotal || 0) - (hpp * (item.qty || 0));
                 map[key].hasHpp = true;
             }
@@ -702,7 +704,7 @@ function printRekap() {
         if (mode === 'tahunan') return tTahun === tahun;
         return tTahun === tahun && tBulan === bulan;
     }).filter(function(t) {
-        if (metode && t.metode_bayar !== metode) return false;
+        if (metode && t.metode !== metode) return false;
         return true;
     });
 
@@ -714,8 +716,9 @@ function printRekap() {
             if (!map[key]) map[key] = { name: key, qty: 0, omzet: 0, laba: 0, hasHpp: false };
             map[key].qty   += item.qty || 0;
             map[key].omzet += item.subtotal || 0;
-            if (item.product_id && allProducts[item.product_id] && allProducts[item.product_id].hpp) {
-                var hpp = allProducts[item.product_id].hpp;
+            var pid = item.id || item.product_id;
+            if (pid && allProducts[pid] && allProducts[pid].hpp) {
+                var hpp = allProducts[pid].hpp;
                 map[key].laba += (item.subtotal || 0) - (hpp * (item.qty || 0));
                 map[key].hasHpp = true;
             }
