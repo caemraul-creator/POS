@@ -20,9 +20,8 @@ var firebaseConfig = {
 
 // ========== KONFIGURASI APLIKASI ==========
 var appConfig = {
-    // Password untuk akses gudang (tetap menggunakan prompt)
-    // Tidak disimpan dalam kode, akan diminta saat akses
-    lowStockThreshold: 5,
+    gudangPassword: 'admin123', // Ganti password gudang di sini
+    lowStockThreshold: 5,       // Peringatan stok rendah jika stok <= nilai ini
     expiryWarningDays: 30,
     holdMaxSlots: 5
 };

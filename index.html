@@ -1009,8 +1009,16 @@
         </div>
         <div class="kasir-footer">
             <div class="footer-summary">
-                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
                     <span>Item: <b id="cart-count">0</b></span>
+                    <span style="font-size:13px; color:var(--ink3);" id="subtotal-line">Subtotal: Rp 0</span>
+                </div>
+                <div id="ppn-row" style="display:none; justify-content:space-between; margin-bottom:4px; font-size:13px; color:var(--ink3);">
+                    <span id="ppn-label">PPN (11%)</span>
+                    <span id="ppn-amount">Rp 0</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span style="font-weight:700;">TOTAL</span>
                     <span style="font-family:'DM Mono',monospace; font-size:18px; font-weight:800;" id="total-price">Rp 0</span>
                 </div>
                 <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:10px;">
@@ -1264,7 +1272,7 @@ var currentRole = null;
 var scannerStream = null;
 var scannerMode = null;
 var _restockSelectedId = null;
-var appConfig = { lowStockThreshold: 10 };
+// appConfig dibaca dari config.js (lowStockThreshold, gudangPassword, dll)
 var _activeAlertFilter = 'all'; // 'all', 'lowstock', 'expired'
 
 function showToast(msg, type) {
@@ -1294,7 +1302,7 @@ try {
     document.getElementById('btn-kasir').onclick = function() { setRole('kasir'); };
     document.getElementById('btn-gudang').onclick = function() { 
         var pass = prompt("Masukkan Password Gudang:");
-        if (pass === 'admin123') setRole('gudang');
+        if (pass === (appConfig.gudangPassword || 'admin123')) setRole('gudang');
         else if (pass) alert("Password salah!");
     };
 } catch(e) { document.getElementById('conn-status').innerHTML = "❌ Gagal: " + e.message; }
@@ -2038,10 +2046,10 @@ function removeFromCart(idx) {
 
 function renderCart() {
     var container = document.getElementById('cart-list');
-    var total = 0, totalQty = 0;
+    var subtotal = 0, totalQty = 0;
     container.innerHTML = '';
     cart.forEach((item, i) => {
-        total += item.price * item.qty;
+        subtotal += item.price * item.qty;
         totalQty += item.qty;
         var div = document.createElement('div');
         div.className = 'cart-row';
@@ -2055,8 +2063,24 @@ function renderCart() {
         container.appendChild(div);
     });
     if(cart.length===0) container.innerHTML = '<div class="cart-empty">🛒 Keranjang kosong</div>';
+
+    // Hitung PPN
+    var ppnEnabled = fiturConfig && fiturConfig.ppnEnabled;
+    var ppnRate = (fiturConfig && fiturConfig.ppnRate) ? fiturConfig.ppnRate : 11;
+    var ppnAmount = ppnEnabled ? Math.round(subtotal * ppnRate / 100) : 0;
+    var grandTotal = subtotal + ppnAmount;
+
     document.getElementById('cart-count').textContent = totalQty;
-    document.getElementById('total-price').textContent = 'Rp ' + total.toLocaleString('id-ID');
+    document.getElementById('subtotal-line').textContent = 'Subtotal: Rp ' + subtotal.toLocaleString('id-ID');
+    var ppnRow = document.getElementById('ppn-row');
+    if (ppnEnabled) {
+        ppnRow.style.display = 'flex';
+        document.getElementById('ppn-label').textContent = 'PPN (' + ppnRate + '%)';
+        document.getElementById('ppn-amount').textContent = 'Rp ' + ppnAmount.toLocaleString('id-ID');
+    } else {
+        ppnRow.style.display = 'none';
+    }
+    document.getElementById('total-price').textContent = 'Rp ' + grandTotal.toLocaleString('id-ID');
 }
 
 function selectPayMethod(btn) {
@@ -2078,8 +2102,14 @@ function hitungKembalian() {
 
 function processPayment() {
     if(cart.length===0) { showToast('Keranjang kosong!','error'); return; }
-    var total = 0;
-    cart.forEach(item => total += item.price * item.qty);
+    var subtotal = 0;
+    cart.forEach(item => subtotal += item.price * item.qty);
+
+    var ppnEnabled = fiturConfig && fiturConfig.ppnEnabled;
+    var ppnRate = (fiturConfig && fiturConfig.ppnRate) ? fiturConfig.ppnRate : 11;
+    var ppnAmount = ppnEnabled ? Math.round(subtotal * ppnRate / 100) : 0;
+    var total = subtotal + ppnAmount;
+
     if(activePayMethod === 'Tunai') {
         var bayar = parseInt(document.getElementById('uang-bayar').value.replace(/\./g,''))||0;
         if(bayar < total) { showToast('Uang kurang!','error'); return; }
@@ -2087,6 +2117,8 @@ function processPayment() {
     // Save transaction to Firebase
     var trxData = {
         items: cart.map(function(c) { return { id: c.id, name: c.name, qty: c.qty, price: c.price, subtotal: c.price * c.qty }; }),
+        subtotal: subtotal,
+        ppn: ppnAmount,
         total: total,
         metode: activePayMethod,
         pelanggan_id: document.getElementById('kasir-pelanggan').value || null,
