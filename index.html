@@ -1255,6 +1255,58 @@
     </div>
 </div>
 
+<!-- QUICK ADD PRODUCT MODAL -->
+<div id="quick-add-modal" class="modal-overlay hidden">
+    <div class="modal-box" style="max-width:440px;">
+        <div class="modal-header">
+            <h4>📦 Produk Baru — Barcode Tidak Ditemukan</h4>
+            <button onclick="closeQuickAdd()" style="width:30px; height:30px; border-radius:8px; border:1.5px solid var(--border); background:var(--bg); cursor:pointer; font-size:16px;">✕</button>
+        </div>
+        <div style="padding:20px;">
+            <div style="background:#fff3bf; padding:10px 14px; border-radius:10px; margin-bottom:16px; font-size:12px; color:#b07d00; display:flex; align-items:center; gap:8px;">
+                <span style="font-size:18px;">⚠️</span>
+                <span>Barcode <strong id="qa-barcode-display">—</strong> belum terdaftar. Silakan isi data produk di bawah.</span>
+            </div>
+            <input type="hidden" id="qa-barcode">
+            <div class="form-group">
+                <label>Nama Produk *</label>
+                <input type="text" id="qa-nama" placeholder="Contoh: Indomie Goreng" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; background:var(--bg); outline:none;" autofocus>
+            </div>
+            <div class="row-2col">
+                <div class="form-group">
+                    <label>Harga Jual (Rp) *</label>
+                    <input type="text" id="qa-harga" placeholder="0" oninput="formatRupiah(this)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; background:var(--bg); outline:none;">
+                </div>
+                <div class="form-group">
+                    <label>HPP / Modal (Rp)</label>
+                    <input type="text" id="qa-hpp" placeholder="0" oninput="formatRupiah(this)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; background:var(--bg); outline:none;">
+                </div>
+            </div>
+            <div class="row-2col">
+                <div class="form-group">
+                    <label>Stok Awal *</label>
+                    <input type="number" id="qa-stok" placeholder="1" min="0" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; background:var(--bg); outline:none;">
+                </div>
+                <div class="form-group">
+                    <label>Satuan</label>
+                    <select id="qa-satuan" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; background:var(--bg); outline:none;">
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Kategori</label>
+                <select id="qa-kategori" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; background:var(--bg); outline:none;">
+                    <option value="">-- Pilih Kategori --</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="closeQuickAdd()" style="flex:1; padding:11px; border-radius:9px; border:1.5px solid var(--border); background:var(--bg); font-weight:600; cursor:pointer; font-size:13px;">Batal</button>
+            <button onclick="saveQuickProduct()" class="btn-primary" style="flex:2; border-radius:9px; margin-top:0; font-size:14px;">💾 Simpan & Tambah ke Keranjang</button>
+        </div>
+    </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -2175,6 +2227,104 @@ function closeScanner() {
     }
 }
 
+// ========== QUICK ADD PRODUCT (Barcode Not Found) ==========
+function populateQADropdowns() {
+    var cats = typeof productCategories !== 'undefined' ? productCategories : [];
+    var units = typeof productUnits !== 'undefined' ? productUnits : ['pcs', 'kg', 'liter', 'dus', 'pack', 'box'];
+
+    var katSel = document.getElementById('qa-kategori');
+    if (katSel) {
+        katSel.innerHTML = '<option value="">-- Pilih Kategori --</option>';
+        cats.forEach(function(c) {
+            var opt = document.createElement('option');
+            opt.value = c; opt.textContent = c;
+            katSel.appendChild(opt);
+        });
+    }
+
+    var satSel = document.getElementById('qa-satuan');
+    if (satSel) {
+        satSel.innerHTML = '';
+        units.forEach(function(u) {
+            var opt = document.createElement('option');
+            opt.value = u; opt.textContent = u;
+            if (u === 'pcs') opt.selected = true;
+            satSel.appendChild(opt);
+        });
+    }
+}
+
+function openQuickAdd(barcode) {
+    populateQADropdowns();
+    document.getElementById('qa-barcode').value = barcode;
+    document.getElementById('qa-barcode-display').textContent = barcode;
+    document.getElementById('qa-nama').value = '';
+    document.getElementById('qa-harga').value = '';
+    document.getElementById('qa-hpp').value = '';
+    document.getElementById('qa-stok').value = '1';
+    document.getElementById('quick-add-modal').classList.remove('hidden');
+    setTimeout(function() {
+        var namaInput = document.getElementById('qa-nama');
+        if (namaInput) namaInput.focus();
+    }, 200);
+}
+
+function closeQuickAdd() {
+    document.getElementById('quick-add-modal').classList.add('hidden');
+}
+
+function saveQuickProduct() {
+    var barcode = document.getElementById('qa-barcode').value.trim();
+    var nama = document.getElementById('qa-nama').value.trim();
+    var harga = parseRupiahVal(document.getElementById('qa-harga').value);
+    var hpp = parseRupiahVal(document.getElementById('qa-hpp').value);
+    var stok = parseInt(document.getElementById('qa-stok').value) || 0;
+    var satuan = document.getElementById('qa-satuan').value || 'pcs';
+    var kategori = document.getElementById('qa-kategori').value || '';
+
+    if (!nama) { showToast('Nama produk wajib diisi', 'error'); return; }
+    if (harga <= 0) { showToast('Harga jual wajib diisi', 'error'); return; }
+
+    // Cek barcode duplikat (lagi, untuk keamanan)
+    var dup = Object.entries(productsData).find(([id,p]) => p.barcode === barcode);
+    if (dup) {
+        showToast('Barcode sudah digunakan oleh: ' + dup[1].name, 'error');
+        // Tambahkan produk yang sudah ada ke keranjang
+        if (scannerMode === 'kasir') addToCart(dup[0]);
+        closeQuickAdd();
+        return;
+    }
+
+    var newProduct = {
+        name: nama,
+        barcode: barcode,
+        price: harga,
+        hpp: hpp,
+        stock: stok,
+        satuan: satuan,
+        kategori: kategori,
+        created_at: Date.now()
+    };
+
+    productsRef.push(newProduct).then(function(ref) {
+        var newId = ref.key;
+        showToast('✅ Produk "' + nama + '" berhasil ditambahkan!', 'success');
+        closeQuickAdd();
+
+        // Jika di mode kasir, langsung tambahkan ke keranjang
+        if (scannerMode === 'kasir') {
+            addToCart(newId);
+            showToast(nama + ' ditambahkan ke keranjang', 'success');
+        }
+    }).catch(function(e) {
+        showToast('❌ Gagal menyimpan: ' + e.message, 'error');
+    });
+}
+
+function parseRupiahVal(val) {
+    return parseInt(String(val).replace(/\./g, '').replace(/[^0-9]/g, '')) || 0;
+}
+
 function startCamera() {
     if(!navigator.mediaDevices) {
         document.getElementById('scanner-result').innerHTML = '❌ Kamera tidak didukung';
@@ -2225,9 +2375,9 @@ function handleBarcode(code) {
             showToast(found[1].name + ' ditambahkan', 'success');
             closeScanner();
         } else {
-            document.getElementById('search-kasir').value = code;
-            filterProducts();
-            setTimeout(() => closeScanner(), 1500);
+            // Barcode tidak ditemukan → buka form quick add produk
+            closeScanner();
+            openQuickAdd(code);
         }
     }
     else if(scannerMode === 'restock') {
@@ -2242,8 +2392,9 @@ function handleBarcode(code) {
                 setTimeout(() => row.classList.remove('scanner-highlight'), 1000);
             }
         } else {
-            showToast('Barcode tidak ditemukan', 'error');
-            setTimeout(() => closeScanner(), 1500);
+            // Barcode tidak ditemukan → buka form quick add produk
+            closeScanner();
+            openQuickAdd(code);
         }
     }
     else if(scannerMode === 'cek-stok') {

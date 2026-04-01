@@ -1376,7 +1376,7 @@ function handleBarcodeResult(barcode) {
             resultDiv.style.padding = '6px 10px';
             resultDiv.style.borderRadius = '6px';
             resultDiv.style.color = '#b07d00';
-            resultDiv.innerHTML = '⚠️ Barcode sudah digunakan oleh: <strong>' + existing.product.name + '</strong>';
+            resultDiv.innerHTML = '⚠️ Barcode sudah digunakan oleh: <strong>' + existing.product.name + '</strong> <span style="cursor:pointer;color:var(--accent);font-weight:700;margin-left:6px;" onclick="openEditModal(\'' + existing.id + '\')">✏️ Edit</span>';
         } else {
             resultDiv.style.display = 'block';
             resultDiv.style.background = '#e6fcf5';
@@ -1400,7 +1400,23 @@ function handleBarcodeResult(barcode) {
             renderProductList();
             showToast('Ditemukan: ' + found.product.name, 'success');
         } else {
-            showToast('Barcode tidak ditemukan', 'error');
+            // Barcode tidak ditemukan → isi barcode di form tambah dan scroll ke atas
+            showToast('📦 Barcode tidak ditemukan. Silakan tambah produk baru.', 'warning');
+            document.getElementById('product-barcode').value = barcode;
+            // Tampilkan notifikasi bahwa barcode belum terdaftar
+            var resultDiv = document.getElementById('barcode-check-result');
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = '#fff3bf';
+            resultDiv.style.padding = '8px 12px';
+            resultDiv.style.borderRadius = '8px';
+            resultDiv.style.color = '#b07d00';
+            resultDiv.style.fontSize = '12px';
+            resultDiv.innerHTML = '⚠️ Barcode <strong>' + barcode + '</strong> belum terdaftar. Isi nama & harga produk, lalu klik <strong>"Simpan Produk"</strong>.';
+            // Focus ke nama produk
+            setTimeout(function() {
+                document.getElementById('product-name').focus();
+                document.getElementById('product-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 500);
         }
     }
     
