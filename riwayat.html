@@ -85,7 +85,7 @@
         .payment-pill .pill-count { opacity: 0.7; font-size: 10px; }
 
         /* CONTENT */
-        .content { flex: 1; overflow-y: auto; padding: 0; display: flex; gap: 0; overflow: hidden; }
+        .content { flex: 1; overflow-y: auto; padding: 0; display: flex; gap: 0; overflow: hidden; position: relative; }
         .content::-webkit-scrollbar { width: 6px; }
         .content::-webkit-scrollbar-thumb { background: #d0d5e8; border-radius: 3px; }
 
@@ -97,6 +97,55 @@
         }
         .trx-list::-webkit-scrollbar { width: 4px; }
         .trx-list::-webkit-scrollbar-thumb { background: #d0d5e8; }
+
+        /* Mobile back button */
+        .detail-back-btn {
+            display: none;
+            padding: 10px 16px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .detail-back-btn:hover { background: var(--surface2); }
+        .detail-back-btn .back-arrow { font-size: 18px; }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .content { flex-direction: column; position: relative; }
+            .trx-list {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                flex: 1;
+            }
+            .detail-panel {
+                position: absolute;
+                top: 0; left: 0; right: 0; bottom: 0;
+                z-index: 100;
+                background: var(--bg);
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                overflow-y: auto;
+                padding: 0;
+            }
+            .detail-panel.mobile-show {
+                transform: translateX(0);
+            }
+            .detail-back-btn {
+                display: flex;
+                position: sticky;
+                top: 0;
+                z-index: 101;
+                background: var(--surface);
+                border-bottom: 1px solid var(--border);
+                padding: 12px 16px;
+            }
+        }
 
         .trx-item {
             padding: 14px 20px; border-bottom: 1px solid var(--border);
@@ -141,11 +190,17 @@
 
         /* DETAIL PANEL */
         .detail-panel {
-            flex: 1; overflow-y: auto; padding: 24px;
+            flex: 1; overflow-y: auto; padding: 0;
             background: var(--bg);
         }
         .detail-panel::-webkit-scrollbar { width: 6px; }
         .detail-panel::-webkit-scrollbar-thumb { background: #d0d5e8; }
+
+        /* Detail content wrapper */
+        #detail-content { padding: 24px; }
+        @media (max-width: 768px) {
+            #detail-content { padding: 16px; }
+        }
 
         .detail-empty {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -299,9 +354,15 @@
     </div>
     <!-- Right: Detail -->
     <div class="detail-panel" id="detail-panel">
-        <div class="detail-empty">
-            <div class="icon">📋</div>
-            <p>Pilih transaksi untuk melihat detail</p>
+        <div class="detail-back-btn" id="detail-back-btn" onclick="closeDetailMobile()">
+            <span class="back-arrow">←</span>
+            <span>Kembali ke Daftar Transaksi</span>
+        </div>
+        <div id="detail-content">
+            <div class="detail-empty">
+                <div class="icon">📋</div>
+                <p>Pilih transaksi untuk melihat detail</p>
+            </div>
         </div>
     </div>
 </div>
@@ -510,12 +571,25 @@ function goToPage(page) {
     renderList();
 }
 
+function closeDetailMobile() {
+    var panel = document.getElementById('detail-panel');
+    if (panel) panel.classList.remove('mobile-show');
+    activeId = null;
+    renderList();
+}
+
 function showDetail(id) {
     activeId = id;
     renderList();
 
     var t = allTransaksi[id];
     if (!t) return;
+
+    // On mobile, slide in detail panel
+    var panel = document.getElementById('detail-panel');
+    if (panel && window.innerWidth <= 768) {
+        panel.classList.add('mobile-show');
+    }
 
     var d = new Date(t.timestamp || 0);
     var pad = function(n){ return String(n).padStart(2,'0'); };
@@ -555,8 +629,8 @@ function showDetail(id) {
             '<div class="detail-row"><span class="label">Kembalian</span><span class="value mono" style="color:var(--green)">Rp ' + (t.kembalian||0).toLocaleString('id-ID') + '</span></div>';
     }
 
-    var panel = document.getElementById('detail-panel');
-    panel.innerHTML =
+    var detailContent = document.getElementById('detail-content');
+    detailContent.innerHTML =
         '<div class="detail-card">' +
         '<h4>Info Transaksi</h4>' +
         '<div class="detail-row"><span class="label">No. Struk</span><span class="value mono" style="color:var(--accent)">#' + noStruk + '</span></div>' +
@@ -568,7 +642,7 @@ function showDetail(id) {
         '<div class="detail-card">' +
         '<h4>Detail Item</h4>' +
         '<table class="items-table">' +
-        '<thead>户<th>Produk</th><th class="right">Qty</th><th class="right">Harga</th><th class="right">Subtotal</th></tr></thead>' +
+        '<thead><tr><th>Produk</th><th class="right">Qty</th><th class="right">Harga</th><th class="right">Subtotal</th></tr></thead>' +
         '<tbody>' + itemRows + '</tbody>' +
         '</table>' +
         '<div class="total-row">' +
@@ -598,7 +672,9 @@ function deleteTransaksi(id) {
 
     transaksiRef.child(id).remove().then(function() {
         activeId = null;
-        document.getElementById('detail-panel').innerHTML = '<div class="detail-empty"><div class="icon">✅</div><p>Transaksi berhasil dihapus</p></div>';
+        var detailContent = document.getElementById('detail-content');
+        if (detailContent) detailContent.innerHTML = '<div class="detail-empty" style="padding:24px;"><div class="icon">✅</div><p>Transaksi berhasil dihapus</p></div>';
+        closeDetailMobile();
         showUndoToast();
     }).catch(function(e) {
         alert('Gagal hapus: ' + e.message);
@@ -658,7 +734,9 @@ function batchDelete() {
 
     db.ref('transaksi').update(batch).then(function() {
         activeId = null;
-        document.getElementById('detail-panel').innerHTML = '<div class="detail-empty"><div class="icon">✅</div><p>' + filteredList.length + ' transaksi berhasil dihapus</p></div>';
+        var detailContent = document.getElementById('detail-content');
+        if (detailContent) detailContent.innerHTML = '<div class="detail-empty" style="padding:24px;"><div class="icon">✅</div><p>' + filteredList.length + ' transaksi berhasil dihapus</p></div>';
+        closeDetailMobile();
         showToast('✅ ' + filteredList.length + ' transaksi dihapus');
     }).catch(function(e) {
         alert('Gagal hapus: ' + e.message);
