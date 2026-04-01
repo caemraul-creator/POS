@@ -21,15 +21,17 @@
         .topbar {
             background: var(--ink); color: #fff;
             padding: 0 24px; height: 56px;
-            display: flex; align-items: center; gap: 16px; flex-shrink: 0;
+            display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+            overflow-x: auto;
         }
+        .topbar::-webkit-scrollbar { height: 0; }
         .topbar-logo { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 3px; color: var(--accent2); text-transform: uppercase; }
-        .topbar-title { font-size: 15px; font-weight: 700; flex: 1; }
+        .topbar-title { font-size: 15px; font-weight: 700; flex: 1; white-space: nowrap; }
         .nav-link {
-            padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+            padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
             text-decoration: none; color: rgba(255,255,255,0.7);
             background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
-            transition: all 0.15s;
+            transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
         }
         .nav-link:hover { background: rgba(255,255,255,0.15); color: #fff; }
         .nav-link.active { background: var(--accent); color: #fff; border-color: var(--accent); }
@@ -56,18 +58,79 @@
         .mode-btn.active { border-color: var(--accent); background: #eef2ff; color: var(--accent); }
         .mode-btn:hover { border-color: var(--accent); color: var(--accent); }
         .divider { width: 1px; height: 28px; background: var(--border); margin: 0 4px; }
-        .summary-chips { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+        .summary-chips { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; align-items: center; }
         .chip {
             padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700;
             font-family: 'DM Mono', monospace;
         }
         .chip-blue { background: #dbe4ff; color: var(--accent); }
         .chip-green { background: #d3f9d8; color: var(--green); }
+        .action-btn {
+            padding: 6px 16px; background: var(--accent); color: #fff; border: none;
+            border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 12px;
+            font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+        }
+        .action-btn:hover { background: var(--accent2); transform: translateY(-1px); }
+        .action-btn-green { background: var(--green); }
+        .action-btn-green:hover { background: #099268; }
 
         /* CONTENT */
         .content { flex: 1; overflow-y: auto; padding: 20px 24px; }
         .content::-webkit-scrollbar { width: 6px; }
         .content::-webkit-scrollbar-thumb { background: #d0d5e8; border-radius: 3px; }
+
+        /* BAR CHART */
+        .bar-chart-card {
+            background: var(--surface); border-radius: 14px; padding: 20px 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 16px;
+        }
+        .bar-chart-title {
+            font-size: 13px; font-weight: 700; color: var(--ink2);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;
+        }
+        .bar-chart-container { display: flex; align-items: flex-end; gap: 16px; height: 180px; padding: 0 8px; }
+        .bar-chart-item { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; }
+        .bar-chart-qty {
+            font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700;
+            color: var(--ink); margin-bottom: 6px;
+        }
+        .bar-chart-bar-wrap {
+            width: 100%; max-width: 56px; height: 100%; display: flex; align-items: flex-end; justify-content: center;
+        }
+        .bar-chart-bar {
+            width: 100%; border-radius: 6px 6px 2px 2px;
+            transition: height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative; min-height: 4px;
+        }
+        .bar-chart-bar::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 100%);
+            border-radius: 6px 6px 0 0;
+        }
+        .bar-chart-bar.b1 { background: linear-gradient(180deg, #f59f00, #e67700); box-shadow: 0 4px 12px rgba(245,159,0,0.3); }
+        .bar-chart-bar.b2 { background: linear-gradient(180deg, #868e96, #6b7280); box-shadow: 0 4px 12px rgba(134,142,150,0.3); }
+        .bar-chart-bar.b3 { background: linear-gradient(180deg, #cd7f32, #b06a20); box-shadow: 0 4px 12px rgba(205,127,50,0.3); }
+        .bar-chart-bar.b4 { background: linear-gradient(180deg, var(--accent2), var(--accent)); box-shadow: 0 4px 12px rgba(59,91,219,0.2); }
+        .bar-chart-bar.b5 { background: linear-gradient(180deg, #7950f2, #6741d9); box-shadow: 0 4px 12px rgba(121,80,242,0.2); }
+        .bar-chart-name {
+            font-size: 11px; font-weight: 600; color: var(--ink2);
+            margin-top: 8px; text-align: center; max-width: 80px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* COMPARISON BADGE */
+        .comparison-section {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+        }
+        .comparison-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700;
+            font-family: 'DM Mono', monospace;
+        }
+        .badge-up { background: #d3f9d8; color: #099268; }
+        .badge-down { background: #ffe3e3; color: #e03131; }
+        .badge-neutral { background: #f1f3f5; color: #868e96; }
+        .comparison-label { font-size: 12px; color: var(--ink3); font-weight: 600; }
 
         /* TABLE */
         .rekap-table {
@@ -101,6 +164,39 @@
         .bar-fill.top2 { background: #8a9bb0; }
         .bar-fill.top3 { background: #cd7f32; }
 
+        /* TOP PELANGGAN */
+        .pelanggan-card {
+            background: var(--surface); border-radius: 14px; padding: 20px 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-top: 16px;
+        }
+        .pelanggan-card h3 {
+            font-size: 13px; font-weight: 700; color: var(--ink2);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
+        }
+        .pelanggan-list { display: flex; flex-direction: column; gap: 8px; }
+        .pelanggan-row {
+            display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+            border-radius: 10px; transition: background 0.15s;
+        }
+        .pelanggan-row:hover { background: var(--surface2); }
+        .pelanggan-rank {
+            width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 800;
+            flex-shrink: 0;
+        }
+        .pelanggan-rank.r1 { background: linear-gradient(135deg, #f59f00, #e67700); color: #fff; box-shadow: 0 2px 8px rgba(245,159,0,0.3); }
+        .pelanggan-rank.r2 { background: linear-gradient(135deg, #868e96, #6b7280); color: #fff; }
+        .pelanggan-rank.r3 { background: linear-gradient(135deg, #cd7f32, #b06a20); color: #fff; }
+        .pelanggan-rank.r4, .pelanggan-rank.r5 { background: var(--bg); color: var(--ink3); }
+        .pelanggan-info { flex: 1; min-width: 0; }
+        .pelanggan-name { font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pelanggan-trx { font-size: 11px; color: var(--ink3); }
+        .pelanggan-total {
+            font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 700;
+            color: var(--accent); white-space: nowrap;
+        }
+
         /* Empty state */
         .empty-state {
             text-align: center; padding: 60px 20px; color: var(--ink3);
@@ -117,6 +213,22 @@
             margin-bottom: 12px; padding-bottom: 8px;
             border-bottom: 2px solid var(--border);
         }
+
+        /* Toast */
+        .toast-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 9999; }
+        .toast {
+            background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 10px;
+            font-size: 13px; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            display: flex; align-items: center; gap: 10px;
+            animation: toastIn 0.3s ease;
+        }
+        .toast .undo-btn {
+            background: var(--accent); color: #fff; border: none; padding: 4px 12px;
+            border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .toast .undo-btn:hover { background: var(--accent2); }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -126,9 +238,10 @@
     <span class="topbar-logo">POS</span>
     <span class="topbar-title">📊 Rekap Penjualan</span>
     <a href="index.html" class="nav-link">🏪 Kasir</a>
-    <a href="pelanggan.html" class="nav-link">👥 Pelanggan</a>
     <a href="riwayat.html" class="nav-link">📋 Riwayat</a>
     <a href="rekap.html" class="nav-link active">📊 Rekap</a>
+    <a href="pelanggan.html" class="nav-link">👥 Pelanggan</a>
+    <a href="kadaluarsa.html" class="nav-link">🗓️ Kadaluarsa</a>
 </div>
 
 <!-- FILTER BAR -->
@@ -157,12 +270,25 @@
             <option value="11">November</option><option value="12">Desember</option>
         </select>
     </div>
+    <div class="divider"></div>
+    <!-- Filter Metode Pembayaran -->
+    <div class="filter-group">
+        <span class="filter-label">Metode</span>
+        <select class="filter-select" id="sel-metode" onchange="render()">
+            <option value="">Semua</option>
+            <option value="Tunai">Tunai</option>
+            <option value="Transfer">Transfer</option>
+            <option value="QRIS">QRIS</option>
+            <option value="Kartu">Kartu</option>
+        </select>
+    </div>
     <!-- Summary chips -->
     <div class="summary-chips">
         <div class="chip chip-blue" id="chip-transaksi">0 Transaksi</div>
         <div class="chip chip-green" id="chip-omzet">Rp 0</div>
         <div class="chip" id="chip-laba" style="background:#d3f9d8; color: #0ca678; display:none;">Laba Rp 0</div>
-        <button onclick="printRekap()" style="padding:6px 16px; background:var(--accent); color:#fff; border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">🖨 Export/Print</button>
+        <button onclick="exportCSV()" class="action-btn action-btn-green">📥 Export CSV</button>
+        <button onclick="printRekap()" class="action-btn">🖨 Export/Print</button>
     </div>
 </div>
 
@@ -170,6 +296,9 @@
 <div class="content" id="content">
     <div class="loading">⏳ Memuat data...</div>
 </div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -254,24 +383,46 @@ function render() {
     }, 100);
 }
 
+// ====== HELPER: Get filtered transactions ======
+function getFilteredTransactions(tahun, bulan, prevMode) {
+    var metode = document.getElementById('sel-metode').value;
+    return Object.values(allTransaksi).filter(function(t) {
+        var tTahun = t.tahun || (t.timestamp ? new Date(t.timestamp).getFullYear() : null);
+        var tBulan = t.bulan || (t.timestamp ? new Date(t.timestamp).getMonth() + 1 : null);
+        if (prevMode === 'tahunan') return tTahun === tahun;
+        return tTahun === tahun && tBulan === bulan;
+    }).filter(function(t) {
+        if (metode && t.metode_bayar !== metode) return false;
+        return true;
+    });
+}
+
 function _render() {
     var tahun = safeNumber(document.getElementById('sel-tahun').value);
     var bulan = safeNumber(document.getElementById('sel-bulan').value);
+    var metode = document.getElementById('sel-metode').value;
     
     if (!allTransaksi) allTransaksi = {};
     if (!allProducts) allProducts = {};
 
-    // Filter transaksi
+    // Filter transaksi (current period)
     var filtered = Object.values(allTransaksi).filter(function(t) {
         var tTahun = t.tahun || (t.timestamp ? new Date(t.timestamp).getFullYear() : null);
         var tBulan = t.bulan || (t.timestamp ? new Date(t.timestamp).getMonth() + 1 : null);
         if (mode === 'tahunan') return tTahun === tahun;
         return tTahun === tahun && tBulan === bulan;
     });
+    // Apply metode filter
+    var metodeFiltered = filtered;
+    if (metode) {
+        metodeFiltered = filtered.filter(function(t) {
+            return t.metode_bayar === metode;
+        });
+    }
 
     // Aggregate per item
     var map = {}; // { name: { qty, omzet, laba } }
-    filtered.forEach(function(t) {
+    metodeFiltered.forEach(function(t) {
         if (!t.items) return;
         t.items.forEach(function(item) {
             var key = item.name;
@@ -288,12 +439,12 @@ function _render() {
     });
 
     var rows = Object.values(map).sort(function(a,b) { return b.qty - a.qty; });
-    var totalOmzet = filtered.reduce(function(s,t){return s+(t.total||0);}, 0);
+    var totalOmzet = metodeFiltered.reduce(function(s,t){return s+(t.total||0);}, 0);
     var totalLaba = rows.reduce(function(s,r){return s+r.laba;}, 0);
     var anyHpp = rows.some(function(r){return r.hasHpp;});
 
     // Summary chips
-    document.getElementById('chip-transaksi').textContent = filtered.length + ' Transaksi';
+    document.getElementById('chip-transaksi').textContent = metodeFiltered.length + ' Transaksi';
     document.getElementById('chip-omzet').textContent = 'Rp ' + totalOmzet.toLocaleString('id-ID');
     var labaChip = document.getElementById('chip-laba');
     if (anyHpp) {
@@ -305,9 +456,103 @@ function _render() {
         labaChip.style.display = 'none';
     }
 
+    // ===== PERIOD COMPARISON =====
+    var comparisonHtml = '';
+    var prevOmzet = 0;
+    var comparisonLabel = '';
+    if (mode === 'bulanan') {
+        // Compare with previous month
+        var prevBulan = bulan - 1;
+        var prevTahun = tahun;
+        if (prevBulan < 1) { prevBulan = 12; prevTahun--; }
+        var prevFiltered = Object.values(allTransaksi).filter(function(t) {
+            var tTahun = t.tahun || (t.timestamp ? new Date(t.timestamp).getFullYear() : null);
+            var tBulan = t.bulan || (t.timestamp ? new Date(t.timestamp).getMonth() + 1 : null);
+            if (metode && t.metode_bayar !== metode) return false;
+            return tTahun === prevTahun && tBulan === prevBulan;
+        });
+        prevOmzet = prevFiltered.reduce(function(s,t){return s+(t.total||0);}, 0);
+        comparisonLabel = 'vs ' + BULAN_NAMA[prevBulan] + ' ' + prevTahun;
+    } else {
+        // Compare with previous year
+        var prevFiltered = Object.values(allTransaksi).filter(function(t) {
+            var tTahun = t.tahun || (t.timestamp ? new Date(t.timestamp).getFullYear() : null);
+            if (metode && t.metode_bayar !== metode) return false;
+            return tTahun === (tahun - 1);
+        });
+        prevOmzet = prevFiltered.reduce(function(s,t){return s+(t.total||0);}, 0);
+        comparisonLabel = 'vs Tahun ' + (tahun - 1);
+    }
+
+    if (prevOmzet > 0 || totalOmzet > 0) {
+        var pctChange = prevOmzet > 0 ? Math.round(((totalOmzet - prevOmzet) / prevOmzet) * 100) : (totalOmzet > 0 ? 100 : 0);
+        var isUp = totalOmzet >= prevOmzet;
+        var badgeClass = isUp ? 'badge-up' : 'badge-down';
+        var arrow = isUp ? '↑' : '↓';
+        var sign = isUp ? '+' : '';
+        if (prevOmzet === 0 && totalOmzet === 0) badgeClass = 'badge-neutral';
+        comparisonHtml = '<div class="comparison-section">' +
+            '<span class="comparison-label">' + comparisonLabel + '</span>' +
+            '<span class="comparison-badge ' + badgeClass + '">' +
+            arrow + ' ' + sign + pctChange + '%</span>' +
+            '<span style="font-size:12px;color:var(--ink3);font-family:\'DM Mono\',monospace;">' +
+            'Rp ' + prevOmzet.toLocaleString('id-ID') + ' → Rp ' + totalOmzet.toLocaleString('id-ID') +
+            '</span></div>';
+    }
+
+    // ===== BAR CHART (Top 5) ======
+    var chartHtml = '';
+    var top5 = rows.slice(0, 5);
+    if (top5.length > 0) {
+        var chartMaxQty = top5[0].qty || 1;
+        var barColors = ['b1','b2','b3','b4','b5'];
+        chartHtml = '<div class="bar-chart-card"><div class="bar-chart-title">🏆 Top 5 Produk (Qty Terjual)</div>';
+        chartHtml += '<div class="bar-chart-container">';
+        top5.forEach(function(row, i) {
+            var heightPct = Math.round((row.qty / chartMaxQty) * 100);
+            chartHtml += '<div class="bar-chart-item">' +
+                '<div class="bar-chart-qty">' + row.qty + '</div>' +
+                '<div class="bar-chart-bar-wrap">' +
+                '<div class="bar-chart-bar ' + barColors[i] + '" style="height:0%;" data-height="' + heightPct + '"></div>' +
+                '</div>' +
+                '<div class="bar-chart-name" title="' + escHtml(row.name) + '">' + escHtml(row.name) + '</div>' +
+                '</div>';
+        });
+        chartHtml += '</div></div>';
+    }
+
+    // ===== TOP 5 PELANGGAN =====
+    var pelangganHtml = '';
+    var pelangganMap = {};
+    metodeFiltered.forEach(function(t) {
+        if (!t.pelanggan_nama || t.pelanggan_nama.toLowerCase() === 'umum') return;
+        var name = t.pelanggan_nama;
+        if (!pelangganMap[name]) pelangganMap[name] = { name: name, total: 0, count: 0 };
+        pelangganMap[name].total += t.total || 0;
+        pelangganMap[name].count++;
+    });
+    var pelangganList = Object.values(pelangganMap).sort(function(a,b){ return b.total - a.total; });
+    var topPelanggan = pelangganList.slice(0, 5);
+    if (topPelanggan.length > 0) {
+        pelangganHtml = '<div class="pelanggan-card"><h3>👑 Top 5 Pelanggan</h3><div class="pelanggan-list">';
+        topPelanggan.forEach(function(pel, i) {
+            var rankClass = i < 3 ? 'r' + (i + 1) : 'r' + (i + 1);
+            pelangganHtml += '<div class="pelanggan-row">' +
+                '<div class="pelanggan-rank ' + rankClass + '">' + (i + 1) + '</div>' +
+                '<div class="pelanggan-info">' +
+                '<div class="pelanggan-name">' + escHtml(pel.name) + '</div>' +
+                '<div class="pelanggan-trx">' + pel.count + ' transaksi</div>' +
+                '</div>' +
+                '<div class="pelanggan-total">Rp ' + pel.total.toLocaleString('id-ID') + '</div>' +
+                '</div>';
+        });
+        pelangganHtml += '</div></div>';
+    }
+
     var judul = mode === 'tahunan'
         ? 'Rekap Tahunan — ' + tahun
         : 'Rekap Bulanan — ' + BULAN_NAMA[bulan] + ' ' + tahun;
+    if (metode) judul += ' [' + metode + ']';
 
     var maxQty = rows.length > 0 ? rows[0].qty : 1;
     var content = document.getElementById('content');
@@ -317,11 +562,16 @@ function _render() {
     if (rows.length === 0) {
         content.innerHTML =
             '<p class="section-title">' + judul + '</p>' +
+            comparisonHtml +
             '<div class="empty-state"><div class="icon">📭</div><p>Tidak ada data penjualan untuk periode ini.</p></div>';
         return;
     }
 
     var html = '<p class="section-title">' + judul + ' · ' + rows.length + ' produk terjual</p>';
+    html += comparisonHtml;
+    html += chartHtml;
+
+    // Table
     html += '<table class="rekap-table"><thead>户' +
         '<th style="width:48px;">#</th>' +
         '<th>Nama Produk</th>' +
@@ -358,22 +608,102 @@ function _render() {
     });
 
     html += '</tbody></table>';
+
+    // Top Pelanggan section
+    html += pelangganHtml;
+
     content.innerHTML = html;
+
+    // Animate bar chart
+    setTimeout(function() {
+        var bars = content.querySelectorAll('.bar-chart-bar[data-height]');
+        bars.forEach(function(bar) {
+            bar.style.height = bar.getAttribute('data-height') + '%';
+        });
+    }, 50);
 }
 
 function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+// ====== EXPORT CSV ======
+function exportCSV() {
+    var tahun = safeNumber(document.getElementById('sel-tahun').value);
+    var bulan = safeNumber(document.getElementById('sel-bulan').value);
+    var metode = document.getElementById('sel-metode').value;
+
+    var filtered = Object.values(allTransaksi).filter(function(t) {
+        var tTahun = t.tahun || (t.timestamp ? new Date(t.timestamp).getFullYear() : null);
+        var tBulan = t.bulan || (t.timestamp ? new Date(t.timestamp).getMonth() + 1 : null);
+        if (mode === 'tahunan') { if (tTahun !== tahun) return false; }
+        else { if (tTahun !== tahun || tBulan !== bulan) return false; }
+        if (metode && t.metode_bayar !== metode) return false;
+        return true;
+    });
+
+    var map = {};
+    filtered.forEach(function(t) {
+        if (!t.items) return;
+        t.items.forEach(function(item) {
+            var key = item.name;
+            if (!map[key]) map[key] = { name: key, qty: 0, omzet: 0, laba: 0, hasHpp: false };
+            map[key].qty   += item.qty || 0;
+            map[key].omzet += item.subtotal || 0;
+            if (item.product_id && allProducts[item.product_id] && allProducts[item.product_id].hpp) {
+                var hpp = allProducts[item.product_id].hpp;
+                map[key].laba += (item.subtotal || 0) - (hpp * (item.qty || 0));
+                map[key].hasHpp = true;
+            }
+        });
+    });
+
+    var rows = Object.values(map).sort(function(a,b){ return b.qty - a.qty; });
+    var anyHpp = rows.some(function(r){ return r.hasHpp; });
+
+    var csv = '\uFEFF'; // BOM for Excel UTF-8
+    var headers = ['No', 'Nama Produk', 'Qty Terjual', 'Omzet'];
+    if (anyHpp) headers.push('Laba Kotor');
+    csv += headers.join(';') + '\n';
+
+    rows.forEach(function(row, i) {
+        var line = [(i+1), '"' + row.name.replace(/"/g, '""') + '"', row.qty, row.omzet];
+        if (anyHpp) line.push(row.hasHpp ? row.laba : 0);
+        csv += line.join(';') + '\n';
+    });
+
+    var filename;
+    if (mode === 'bulanan') {
+        filename = 'rekap_' + BULAN_NAMA[bulan].toLowerCase() + '_' + tahun + '.csv';
+    } else {
+        filename = 'rekap_tahunan_' + tahun + '.csv';
+    }
+
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+
+    showToast('✅ CSV berhasil diunduh: ' + filename);
+}
+
 function printRekap() {
     var tahun = safeNumber(document.getElementById('sel-tahun').value);
     var bulan = safeNumber(document.getElementById('sel-bulan').value);
+    var metode = document.getElementById('sel-metode').value;
 
     var filtered = Object.values(allTransaksi).filter(function(t) {
         var tTahun = t.tahun || (t.timestamp ? new Date(t.timestamp).getFullYear() : null);
         var tBulan = t.bulan || (t.timestamp ? new Date(t.timestamp).getMonth() + 1 : null);
         if (mode === 'tahunan') return tTahun === tahun;
         return tTahun === tahun && tBulan === bulan;
+    }).filter(function(t) {
+        if (metode && t.metode_bayar !== metode) return false;
+        return true;
     });
 
     var map = {};
@@ -397,6 +727,7 @@ function printRekap() {
     var totalLaba  = rows.reduce(function(s,r){ return s+r.laba; }, 0);
     var anyHpp = rows.some(function(r){ return r.hasHpp; });
     var judul = mode === 'tahunan' ? 'Rekap Tahunan ' + tahun : 'Rekap Bulanan ' + BULAN_NAMA[bulan] + ' ' + tahun;
+    if (metode) judul += ' [' + metode + ']';
     var tokoNama = (tokoConfig && tokoConfig.nama) ? tokoConfig.nama : 'TOKO';
     var tokoAlamat = (tokoConfig && tokoConfig.alamat) ? tokoConfig.alamat : '';
     var now = new Date();
@@ -470,6 +801,16 @@ function printRekap() {
     win.document.close();
     win.focus();
     setTimeout(function(){ win.print(); }, 400);
+}
+
+// ====== TOAST ======
+function showToast(message) {
+    var container = document.getElementById('toast-container');
+    var toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = message;
+    container.appendChild(toast);
+    setTimeout(function(){ toast.remove(); }, 3000);
 }
 </script>
 </body>

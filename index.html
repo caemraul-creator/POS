@@ -39,6 +39,7 @@
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, #0f1117 0%, #1a2035 50%, #0f1117 100%);
+            padding: 20px;
         }
         .role-logo {
             font-family: 'DM Mono', monospace;
@@ -58,8 +59,80 @@
         .role-subtitle {
             color: #8891a5;
             font-size: 15px;
-            margin-bottom: 48px;
+            margin-bottom: 24px;
         }
+
+        /* Dashboard Stats */
+        .dash-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 720px;
+            margin-bottom: 28px;
+        }
+        @media (max-width: 600px) {
+            .dash-stats { grid-template-columns: repeat(2, 1fr); }
+        }
+        .dash-stat-card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .dash-stat-card:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        .dash-stat-card .stat-icon { font-size: 24px; margin-bottom: 6px; }
+        .dash-stat-card .stat-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+            font-family: 'DM Mono', monospace;
+        }
+        .dash-stat-card .stat-label {
+            font-size: 11px;
+            color: #8891a5;
+            margin-top: 2px;
+            font-weight: 600;
+        }
+        .dash-stat-card.sales .stat-value { color: var(--green); }
+        .dash-stat-card.lowstock .stat-value { color: var(--amber); }
+        .dash-stat-card.expired .stat-value { color: var(--red); }
+
+        /* Nav Links */
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .nav-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #c8cdd8;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .nav-chip:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.3);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
         .role-cards {
             display: flex;
             gap: 16px;
@@ -87,7 +160,7 @@
         .role-card .label { font-size: 18px; font-weight: 600; }
         .role-card .desc { font-size: 13px; color: #8891a5; margin-top: 5px; }
         .conn-chip {
-            margin-top: 40px;
+            margin-top: 24px;
             font-size: 12px;
             padding: 6px 14px;
             border-radius: 20px;
@@ -201,10 +274,14 @@
             padding: 12px 0;
             border-bottom: 1px solid var(--border);
         }
+        .cart-row-info { flex: 1; min-width: 0; }
+        .cart-row-info strong { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cart-row-info span { font-size: 11px; color: var(--ink3); }
         .qty-ctrl {
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-shrink: 0;
         }
         .qty-btn {
             width: 30px;
@@ -217,6 +294,20 @@
             font-size: 16px;
         }
         .qty-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+        .cart-del-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: none;
+            background: #ffe3e3;
+            color: var(--red);
+            cursor: pointer;
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-left: 6px;
+            transition: all 0.2s;
+        }
+        .cart-del-btn:hover { background: var(--red); color: #fff; }
         .kasir-footer {
             background: var(--surface);
             border-top: 1px solid var(--border);
@@ -239,7 +330,23 @@
             font-size: 16px;
             margin-top: 10px;
             cursor: pointer;
+            transition: opacity 0.2s;
         }
+        .pay-btn:hover { opacity: 0.9; }
+        .hold-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--amber);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            margin-top: 6px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .hold-btn:hover { opacity: 0.9; }
         .pay-method-btn {
             padding: 8px;
             border-radius: 8px;
@@ -253,6 +360,107 @@
             border-color: var(--accent);
             background: #eef2ff;
             color: var(--accent);
+        }
+
+        /* Quick Pay Nominal */
+        .quick-pay-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .quick-pay-btn {
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: var(--surface);
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'DM Mono', monospace;
+            color: var(--ink2);
+            transition: all 0.15s;
+        }
+        .quick-pay-btn:hover {
+            border-color: var(--accent);
+            background: #eef2ff;
+            color: var(--accent);
+        }
+        .quick-pay-btn.exact {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .quick-pay-btn.exact:hover { background: var(--accent2); }
+
+        /* Held Transactions */
+        .held-section {
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+            flex-shrink: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .held-section.open { max-height: 300px; }
+        .held-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            cursor: pointer;
+            background: var(--surface2);
+        }
+        .held-header span { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+        .held-badge {
+            background: var(--amber);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 10px;
+            min-width: 20px;
+            text-align: center;
+        }
+        .held-list {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 0 12px 12px;
+        }
+        .held-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            background: var(--bg);
+            border-radius: 8px;
+            margin-top: 6px;
+            font-size: 12px;
+            transition: all 0.15s;
+        }
+        .held-item:hover { background: var(--surface2); }
+        .held-item-info { flex: 1; min-width: 0; }
+        .held-item-info strong { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .held-item-info span { color: var(--ink3); font-size: 10px; }
+        .held-item-actions { display: flex; gap: 4px; flex-shrink: 0; margin-left: 8px; }
+        .held-resume-btn {
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: none;
+            background: var(--green);
+            color: #fff;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .held-delete-btn {
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: none;
+            background: #ffe3e3;
+            color: var(--red);
+            cursor: pointer;
+            font-size: 11px;
         }
 
         /* =========== GUDANG SCREEN =========== */
@@ -300,6 +508,28 @@
             cursor: pointer;
             font-size: 12px;
         }
+        /* Gudang Nav Links */
+        .gudang-nav {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .gudang-nav a {
+            padding: 4px 10px;
+            border-radius: 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--ink2);
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.15s;
+        }
+        .gudang-nav a:hover {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
         /* Tab Switcher */
         .tab-switch {
             display: flex;
@@ -316,7 +546,8 @@
             font-weight: 600;
             cursor: pointer;
             text-align: center;
-            font-size: 13px;
+            font-size: 12px;
+            transition: all 0.15s;
         }
         .tab-btn:first-child { border-radius: 10px 0 0 10px; border-right: none; }
         .tab-btn:last-child { border-radius: 0 10px 10px 0; }
@@ -387,47 +618,117 @@
             font-size: 11px;
             text-transform: uppercase;
             color: var(--ink3);
-            padding: 12px 10px;
+            padding: 12px 8px;
             border-bottom: 2px solid var(--border);
             text-align: left;
             background: var(--surface2);
         }
         .stock-table td {
-            padding: 10px;
-            font-size: 13px;
+            padding: 10px 8px;
+            font-size: 12px;
             border-bottom: 1px solid var(--border);
         }
         .stock-table tr:hover { background: var(--surface2); }
+        .stock-table .summary-row td {
+            font-weight: 800;
+            background: var(--bg);
+            border-top: 2px solid var(--ink);
+            border-bottom: none;
+            font-size: 12px;
+        }
         .stock-input {
-            width: 65px;
+            width: 60px;
             padding: 6px;
             text-align: center;
             border: 1.5px solid var(--border);
             border-radius: 6px;
             font-family: 'DM Mono', monospace;
+            font-size: 13px;
         }
         .sctrl-btn {
-            width: 28px;
-            height: 28px;
+            width: 26px;
+            height: 26px;
             border-radius: 6px;
             border: 1.5px solid var(--border);
             background: var(--surface);
             cursor: pointer;
             font-weight: 700;
+            font-size: 14px;
         }
         .sctrl-btn.plus:hover { background: var(--green); color: #fff; }
         .sctrl-btn.minus:hover { background: var(--red); color: #fff; }
-        .edit-btn, .del-btn {
-            width: 30px;
-            height: 30px;
+        .detail-btn {
+            padding: 4px 8px;
             border-radius: 6px;
-            border: none;
+            border: 1.5px solid var(--accent);
+            background: #eef2ff;
+            color: var(--accent);
             cursor: pointer;
-            font-size: 13px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
         }
-        .edit-btn { background: #eef2ff; color: var(--accent); }
-        .del-btn { background: #ffe3e3; color: var(--red); }
-        .action-btns { display: flex; gap: 6px; }
+        .detail-btn:hover { background: var(--accent); color: #fff; }
+        .action-btns { display: flex; gap: 4px; align-items: center; }
+
+        /* Category Filter */
+        .category-filter-wrap {
+            padding: 10px 16px 0;
+            flex-shrink: 0;
+        }
+        .category-filter {
+            padding: 8px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink);
+            outline: none;
+            cursor: pointer;
+            max-width: 200px;
+        }
+        .category-filter:focus { border-color: var(--accent); }
+
+        /* Alert Chips */
+        .alert-bar {
+            display: flex;
+            gap: 8px;
+            padding: 10px 16px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .alert-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: none;
+        }
+        .alert-chip.red {
+            background: #ffe3e3;
+            color: var(--red);
+        }
+        .alert-chip.red:hover { background: var(--red); color: #fff; }
+        .alert-chip.red.active { background: var(--red); color: #fff; }
+        .alert-chip.amber {
+            background: #fff3bf;
+            color: #b07d00;
+        }
+        .alert-chip.amber:hover { background: var(--amber); color: #fff; }
+        .alert-chip.amber.active { background: var(--amber); color: #fff; }
+        .alert-chip.neutral {
+            background: var(--bg);
+            color: var(--ink2);
+        }
+        .alert-chip.neutral:hover { background: var(--ink2); color: #fff; }
+        .alert-chip.neutral.active { background: var(--accent); color: #fff; }
 
         /* Batch List */
         .batch-list {
@@ -466,6 +767,62 @@
         .exp-badge.warning { background: #fff3bf; color: #b07d00; }
         .exp-badge.ok { background: #e6fcf5; color: var(--green); }
         .exp-badge.none { background: #f1f3f5; color: var(--ink3); }
+
+        /* Restock Log */
+        .restock-log-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .restock-log-entry {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 12px;
+            border-left: 3px solid var(--green);
+        }
+        .restock-log-entry .log-product { font-weight: 700; font-size: 13px; }
+        .restock-log-entry .log-qty { color: var(--green); font-weight: 700; }
+        .restock-log-entry .log-time { color: var(--ink3); font-size: 10px; font-family: 'DM Mono', monospace; }
+
+        /* Mutasi Log */
+        .mutasi-log-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .mutasi-entry {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 12px;
+        }
+        .mutasi-entry.add { border-left: 3px solid var(--green); }
+        .mutasi-entry.reduce { border-left: 3px solid var(--red); }
+        .mutasi-entry .mutasi-product { font-weight: 700; font-size: 13px; }
+        .mutasi-entry .mutasi-qty { font-weight: 700; font-family: 'DM Mono', monospace; }
+        .mutasi-entry .mutasi-qty.positive { color: var(--green); }
+        .mutasi-entry .mutasi-qty.negative { color: var(--red); }
+        .mutasi-entry .mutasi-reason { color: var(--ink3); font-size: 10px; }
+        .mutasi-entry .mutasi-time { color: var(--ink3); font-size: 10px; font-family: 'DM Mono', monospace; }
+
+        /* Opname */
+        .opname-display {
+            background: var(--bg);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .opname-display .opname-label { font-size: 11px; color: var(--ink3); font-weight: 600; text-transform: uppercase; }
+        .opname-display .opname-value { font-size: 18px; font-weight: 800; font-family: 'DM Mono', monospace; }
+        .opname-selisih { color: var(--green); }
+        .opname-selisih.negatif { color: var(--red); }
 
         /* Scanner result highlight */
         .scanner-highlight {
@@ -525,6 +882,7 @@
         .toast.show { transform: translateX(-50%) translateY(0); }
         .toast.success { background: var(--green); }
         .toast.error { background: var(--red); }
+        .toast.warning { background: var(--amber); }
 
         /* Video scanner */
         #scanner-video {
@@ -557,6 +915,36 @@
     <p class="role-logo">POS SYSTEM</p>
     <h1 class="role-title">Pilih Mode</h1>
     <p class="role-subtitle">Pilih akses sesuai kebutuhan</p>
+
+    <!-- Dashboard Stats -->
+    <div class="dash-stats">
+        <div class="dash-stat-card sales">
+            <div class="stat-icon">💰</div>
+            <div class="stat-value" id="dash-today-sales">0</div>
+            <div class="stat-label">Penjualan Hari Ini</div>
+        </div>
+        <div class="dash-stat-card sales">
+            <div class="stat-icon">🧾</div>
+            <div class="stat-value" id="dash-today-count">0</div>
+            <div class="stat-label">Transaksi Hari Ini</div>
+        </div>
+        <div class="dash-stat-card lowstock">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-value" id="dash-low-stock">0</div>
+            <div class="stat-label">Stok Rendah</div>
+        </div>
+        <div class="dash-stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-value" id="dash-total-products">0</div>
+            <div class="stat-label">Total Produk</div>
+        </div>
+        <div class="dash-stat-card expired">
+            <div class="stat-icon">⏰</div>
+            <div class="stat-value" id="dash-expired">0</div>
+            <div class="stat-label">Kadaluarsa</div>
+        </div>
+    </div>
+
     <div class="role-cards">
         <div class="role-card" id="btn-kasir">
             <div class="icon">📲</div>
@@ -574,6 +962,16 @@
             <div class="desc">Tambah & Kelola Produk</div>
         </div>
     </div>
+
+    <!-- Navigation Links -->
+    <div class="nav-links">
+        <a href="produk.html" class="nav-chip">📦 Produk</a>
+        <a href="riwayat.html" class="nav-chip">📋 Riwayat</a>
+        <a href="rekap.html" class="nav-chip">📊 Rekap</a>
+        <a href="kadaluarsa.html" class="nav-chip">🗓️ Kadaluarsa</a>
+        <a href="pelanggan.html" class="nav-chip">👥 Pelanggan</a>
+    </div>
+
     <div class="conn-chip" id="conn-status">⏳ Menghubungkan ke database...</div>
 </div>
 
@@ -601,6 +999,14 @@
         <div class="kasir-cart-scroll" id="cart-list">
             <div class="cart-empty">🛒 Keranjang kosong</div>
         </div>
+        <!-- Held Transactions Section -->
+        <div class="held-section" id="held-section">
+            <div class="held-header" onclick="toggleHeldSection()">
+                <span>📂 Transaksi Tertunda <span class="held-badge" id="held-badge">0</span></span>
+                <span id="held-toggle-icon">▼</span>
+            </div>
+            <div class="held-list" id="held-list"></div>
+        </div>
         <div class="kasir-footer">
             <div class="footer-summary">
                 <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
@@ -615,6 +1021,14 @@
                 </div>
                 <div id="uang-bayar-wrap">
                     <input type="text" id="uang-bayar" placeholder="Uang Bayar" oninput="hitungKembalian()" style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:8px; font-family:'DM Mono',monospace; font-size:16px;">
+                    <div class="quick-pay-row">
+                        <button class="quick-pay-btn exact" onclick="quickPayExact()">Uang Pas</button>
+                        <button class="quick-pay-btn" onclick="quickPayNominal(5000)">Rp 5.000</button>
+                        <button class="quick-pay-btn" onclick="quickPayNominal(10000)">Rp 10.000</button>
+                        <button class="quick-pay-btn" onclick="quickPayNominal(20000)">Rp 20.000</button>
+                        <button class="quick-pay-btn" onclick="quickPayNominal(50000)">Rp 50.000</button>
+                        <button class="quick-pay-btn" onclick="quickPayNominal(100000)">Rp 100.000</button>
+                    </div>
                     <div style="display:flex; justify-content:space-between; margin-top:6px;">
                         <span style="font-size:12px;">Kembalian:</span>
                         <span id="kembalian-val" style="font-weight:700; font-size:14px;">Rp 0</span>
@@ -633,6 +1047,7 @@
                 </div>
             </div>
             <button class="pay-btn" onclick="processPayment()">💰 BAYAR</button>
+            <button class="hold-btn" onclick="holdTransaction()">⏸️ Hold</button>
         </div>
     </div>
 </div>
@@ -644,11 +1059,19 @@
         <div class="gudang-left">
             <div class="panel-topbar">
                 <span class="topbar-title">🏚️ Manajemen Gudang</span>
+                <div class="gudang-nav">
+                    <a href="produk.html">📦 Produk</a>
+                    <a href="riwayat.html">📋 Riwayat</a>
+                    <a href="rekap.html">📊 Rekap</a>
+                </div>
                 <button class="exit-btn" onclick="resetRole()">Keluar</button>
             </div>
             <div class="tab-switch">
-                <div class="tab-btn active" id="tab-restock-btn" onclick="switchTab('restock')">📥 Restock Cepat</div>
-                <div class="tab-btn" id="tab-batch-btn" onclick="switchTab('batch')">📦 Kelola Batch</div>
+                <div class="tab-btn active" id="tab-restock-btn" onclick="switchTab('restock')">📥 Restock</div>
+                <div class="tab-btn" id="tab-batch-btn" onclick="switchTab('batch')">📦 Batch</div>
+                <div class="tab-btn" id="tab-opname-btn" onclick="switchTab('opname')">📊 Opname</div>
+                <div class="tab-btn" id="tab-mutasi-btn" onclick="switchTab('mutasi')">🔄 Mutasi</div>
+                <div class="tab-btn" id="tab-log-btn" onclick="switchTab('log')">📝 Log</div>
             </div>
             
             <!-- Tab Restock -->
@@ -708,50 +1131,102 @@
                     <button class="btn-primary" onclick="addNewBatch()" style="background:var(--accent);">+ Tambah Batch</button>
                 </div>
             </div>
+
+            <!-- Tab Stok Opname -->
+            <div class="form-scroll hidden" id="form-opname-panel">
+                <div style="margin-bottom:12px; font-size:12px; font-weight:700; color:var(--ink2); text-transform:uppercase;">📊 Stok Opname</div>
+                <div style="margin-bottom:12px; font-size:12px; color:var(--ink3);">Hitung stok fisik & bandingkan dengan sistem</div>
+                <div class="form-group">
+                    <label>Pilih Produk</label>
+                    <select id="opname-product-select" onchange="loadOpnameData()" style="width:100%; padding:10px;">
+                        <option value="">-- Pilih Produk --</option>
+                    </select>
+                </div>
+                <div id="opname-data-container" style="display:none;">
+                    <div class="opname-display">
+                        <div class="opname-label">Stok Sistem</div>
+                        <div class="opname-value" id="opname-stok-sistem">0</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Stok Fisik (Hasil Perhitungan)</label>
+                        <input type="number" id="opname-stok-fisik" placeholder="0" min="0" oninput="hitungSelisih()">
+                    </div>
+                    <div class="opname-display" style="background: #f0f2f8;">
+                        <div class="opname-label">Selisih (Fisik − Sistem)</div>
+                        <div class="opname-value opname-selisih" id="opname-selisih">0</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Alasan Penyesuaian</label>
+                        <select id="opname-reason" style="width:100%; padding:10px;">
+                            <option value="Koreksi">Koreksi</option>
+                            <option value="Barang Rusak">Barang Rusak</option>
+                            <option value="Barang Hilang">Barang Hilang</option>
+                            <option value="Penyesuaian">Penyesuaian</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary btn-warning" onclick="simpanOpname()">📊 Simpan Opname</button>
+                </div>
+            </div>
+
+            <!-- Tab Mutasi Stok -->
+            <div class="form-scroll hidden" id="form-mutasi-panel">
+                <div style="margin-bottom:12px; font-size:12px; font-weight:700; color:var(--ink2); text-transform:uppercase;">🔄 Mutasi Stok</div>
+                <div style="margin-bottom:12px; font-size:12px; color:var(--ink3);">Riwayat perubahan stok (opname, restock, penjualan)</div>
+                <div class="mutasi-log-list" id="mutasi-log-list">
+                    <div style="text-align:center; color:var(--ink3); padding:20px;">Memuat mutasi stok...</div>
+                </div>
+            </div>
+
+            <!-- Tab Restock History Log -->
+            <div class="form-scroll hidden" id="form-log-panel">
+                <div style="margin-bottom:12px; font-size:12px; font-weight:700; color:var(--ink2); text-transform:uppercase;">📝 Riwayat Restock</div>
+                <div class="restock-log-list" id="restock-log-list">
+                    <div style="text-align:center; color:var(--ink3); padding:20px;">Memuat riwayat...</div>
+                </div>
+            </div>
         </div>
 
         <!-- RIGHT PANEL: Stock Table -->
         <div class="gudang-right">
             <div class="panel-topbar">
                 <span class="topbar-title">📋 Daftar Stok Produk</span>
-                <div class="search-wrap" style="width:200px;">
-                    <span class="icon-search">🔍</span>
-                    <input type="text" class="search-input" id="search-gudang" placeholder="Cari..." oninput="renderStockTable()">
+                <div class="gudang-nav">
+                    <a href="produk.html">📦 Produk</a>
+                    <a href="riwayat.html">📋 Riwayat</a>
+                    <a href="rekap.html">📊 Rekap</a>
+                    <a href="kadaluarsa.html">🗓️ Kadaluarsa</a>
+                    <a href="pelanggan.html">👥 Pelanggan</a>
                 </div>
-                <button class="barcode-btn" onclick="openScanner('cek-stok')" style="background:var(--accent); padding:6px 12px;">📷 Cek Stok</button>
+                <button class="exit-btn" onclick="resetRole()">Keluar</button>
+            </div>
+
+            <!-- Alert Dashboard -->
+            <div class="alert-bar" id="alert-bar">
+                <button class="alert-chip red" id="alert-lowstock-chip" onclick="toggleAlertFilter('lowstock')">⚠️ Stok Rendah: <span id="alert-lowstock-count">0</span></button>
+                <button class="alert-chip amber" id="alert-expired-chip" onclick="toggleAlertFilter('expired')">⏰ Kadaluarsa: <span id="alert-expired-count">0</span></button>
+                <button class="alert-chip neutral active" id="alert-all-chip" onclick="toggleAlertFilter('all')">📦 Semua</button>
+            </div>
+
+            <div class="category-filter-wrap">
+                <select class="category-filter" id="category-filter" onchange="renderStockTable()">
+                    <option value="">Semua Kategori</option>
+                </select>
+            </div>
+            <div style="padding: 0 16px; flex-shrink: 0;">
+                <div class="search-wrap" style="position:relative; width:100%;">
+                    <span class="icon-search">🔍</span>
+                    <input type="text" class="search-input" id="search-gudang" placeholder="Cari produk..." oninput="renderStockTable()" style="border-radius:10px;">
+                    <button class="barcode-btn" onclick="openScanner('cek-stok')" style="background:var(--accent); padding:6px 12px; position:absolute; right:0; top:0; border-radius:10px; height:100%;">📷 Cek Stok</button>
+                </div>
             </div>
             <div class="stock-scroll">
                 <table class="stock-table">
                     <thead>
-                        <tr><th>Produk</th><th>Harga</th><th>Stok</th><th>Kadaluarsa</th><th></th></tr>
+                        <tr><th>Produk</th><th>HPP</th><th>Harga</th><th>Stok</th><th>Nilai Stok</th><th>Margin</th><th>Kadaluarsa</th><th>Aksi</th></tr>
                     </thead>
                     <tbody id="stock-table-body"></tbody>
                 </table>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- EDIT MODAL -->
-<div id="edit-modal" class="modal-overlay hidden">
-    <div class="modal-box">
-        <div class="modal-header">
-            <h4>✏️ Edit Produk</h4>
-            <button onclick="closeEditModal()" style="background:none; border:none; font-size:22px; cursor:pointer;">✕</button>
-        </div>
-        <div style="padding:20px;">
-            <input type="hidden" id="edit-id">
-            <div class="form-group"><label>Nama</label><input type="text" id="edit-name"></div>
-            <div class="row-2col">
-                <div class="form-group"><label>Harga</label><input type="text" id="edit-price" oninput="formatRupiah(this)"></div>
-                <div class="form-group"><label>Stok</label><input type="number" id="edit-stock"></div>
-            </div>
-            <div class="form-group"><label>Barcode</label><input type="text" id="edit-barcode"></div>
-            <div class="form-group"><label>Kadaluarsa</label><input type="date" id="edit-expiry"></div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn-cancel" onclick="closeEditModal()" style="flex:1; padding:10px; border:1.5px solid var(--border); background:var(--bg); border-radius:8px;">Batal</button>
-            <button class="btn-save-modal" onclick="saveEditProduct()" style="flex:2; padding:10px; background:var(--accent); color:#fff; border:none; border-radius:8px;">Simpan</button>
         </div>
     </div>
 </div>
@@ -781,14 +1256,16 @@
 
 <script>
 // ========== INIT ==========
-var db, productsRef, pelangganRef, transaksiRef;
-var productsData = {}, pelangganData = {}, transaksiData = {};
+var db, productsRef, pelangganRef, transaksiRef, restockLogRef, stokMutasiRef;
+var productsData = {}, pelangganData = {}, transaksiData = {}, restockLogData = {}, stokMutasiData = {};
 var cart = [];
 var activePayMethod = 'Tunai';
 var currentRole = null;
 var scannerStream = null;
 var scannerMode = null;
 var _restockSelectedId = null;
+var appConfig = { lowStockThreshold: 10 };
+var _activeAlertFilter = 'all'; // 'all', 'lowstock', 'expired'
 
 function showToast(msg, type) {
     var t = document.getElementById('toast');
@@ -811,6 +1288,8 @@ try {
     productsRef = db.ref('products');
     pelangganRef = db.ref('pelanggan');
     transaksiRef = db.ref('transaksi');
+    restockLogRef = db.ref('restock_log');
+    stokMutasiRef = db.ref('stok_mutasi');
     document.getElementById('conn-status').innerHTML = "✅ Database Terhubung";
     document.getElementById('btn-kasir').onclick = function() { setRole('kasir'); };
     document.getElementById('btn-gudang').onclick = function() { 
@@ -820,6 +1299,44 @@ try {
     };
 } catch(e) { document.getElementById('conn-status').innerHTML = "❌ Gagal: " + e.message; }
 
+// ========== DASHBOARD STATS ==========
+function updateDashboardStats() {
+    var today = new Date();
+    var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+    today.setHours(0,0,0,0);
+
+    // Today's sales
+    var todayCount = 0;
+    var todayTotal = 0;
+    Object.values(transaksiData).forEach(function(t) {
+        if (t.tanggal && t.tanggal.startsWith(todayStr)) {
+            todayCount++;
+            todayTotal += (t.total || 0);
+        }
+    });
+    document.getElementById('dash-today-sales').textContent = 'Rp ' + todayTotal.toLocaleString('id-ID');
+    document.getElementById('dash-today-count').textContent = todayCount;
+
+    // Low stock
+    var lowStock = 0;
+    var totalProducts = 0;
+    var expiredCount = 0;
+    Object.values(productsData).forEach(function(p) {
+        if (!p || !p.name) return;
+        totalProducts++;
+        var stok = parseInt(p.stock) || 0;
+        if (stok <= appConfig.lowStockThreshold) lowStock++;
+        if (p.kadaluarsa) {
+            var exp = new Date(p.kadaluarsa);
+            exp.setHours(0,0,0,0);
+            if (exp < today) expiredCount++;
+        }
+    });
+    document.getElementById('dash-low-stock').textContent = lowStock;
+    document.getElementById('dash-total-products').textContent = totalProducts;
+    document.getElementById('dash-expired').textContent = expiredCount;
+}
+
 // ========== ROLE ==========
 function resetRole() { localStorage.removeItem('appRole'); location.reload(); }
 function setRole(role) {
@@ -828,21 +1345,126 @@ function setRole(role) {
     if (role === 'kasir') {
         document.getElementById('kasir-screen').classList.remove('hidden');
         loadPelangganDropdown();
+        renderHeldTransactions();
     } else {
         document.getElementById('gudang-screen').classList.remove('hidden');
         renderStockTable();
         loadProductSelect();
+        loadCategoryFilter();
+        loadRestockLog();
+        loadOpnameProductSelect();
+        loadMutasiLog();
     }
 }
 if (localStorage.getItem('appRole')) setRole(localStorage.getItem('appRole'));
 
+// ========== HOLD TRANSACTION ==========
+function getHeldTransactions() {
+    try { return JSON.parse(localStorage.getItem('heldTransactions') || '[]'); }
+    catch(e) { return []; }
+}
+function saveHeldTransactions(held) {
+    localStorage.setItem('heldTransactions', JSON.stringify(held));
+}
+function holdTransaction() {
+    if (cart.length === 0) { showToast('Keranjang kosong!', 'error'); return; }
+    var held = getHeldTransactions();
+    var total = 0;
+    cart.forEach(function(item) { total += item.price * item.qty; });
+    held.push({
+        id: Date.now(),
+        cart: JSON.parse(JSON.stringify(cart)),
+        total: total,
+        time: new Date().toLocaleString('id-ID'),
+        pelanggan: document.getElementById('kasir-pelanggan').value || ''
+    });
+    saveHeldTransactions(held);
+    cart = [];
+    renderCart();
+    document.getElementById('kasir-pelanggan').value = '';
+    renderHeldTransactions();
+    showToast('⏸️ Transaksi ditahan', 'success');
+}
+function resumeHeldTransaction(idx) {
+    var held = getHeldTransactions();
+    if (!held[idx]) return;
+    // Save current cart if not empty
+    if (cart.length > 0) {
+        holdTransaction();
+    }
+    cart = held[idx].cart;
+    document.getElementById('kasir-pelanggan').value = held[idx].pelanggan || '';
+    held.splice(idx, 1);
+    saveHeldTransactions(held);
+    renderCart();
+    renderHeldTransactions();
+    showToast('📂 Transaksi dilanjutkan', 'success');
+}
+function deleteHeldTransaction(idx) {
+    var held = getHeldTransactions();
+    if (!confirm('Hapus transaksi tertunda ini?')) return;
+    held.splice(idx, 1);
+    saveHeldTransactions(held);
+    renderHeldTransactions();
+    showToast('Transaksi tertunda dihapus', 'success');
+}
+function renderHeldTransactions() {
+    var held = getHeldTransactions();
+    var badge = document.getElementById('held-badge');
+    var section = document.getElementById('held-section');
+    badge.textContent = held.length;
+    if (held.length === 0) {
+        section.classList.remove('open');
+        return;
+    }
+    section.classList.add('open');
+    var list = document.getElementById('held-list');
+    list.innerHTML = '';
+    held.forEach(function(h, i) {
+        var itemNames = h.cart.map(function(c) { return c.name; }).join(', ');
+        if (itemNames.length > 30) itemNames = itemNames.substring(0, 30) + '...';
+        var div = document.createElement('div');
+        div.className = 'held-item';
+        div.innerHTML = '<div class="held-item-info"><strong>' + itemNames + '</strong><span>' + h.time + ' • ' + h.cart.length + ' item • Rp ' + h.total.toLocaleString('id-ID') + '</span></div>' +
+            '<div class="held-item-actions"><button class="held-resume-btn" onclick="resumeHeldTransaction(' + i + ')">▶ Lanjut</button><button class="held-delete-btn" onclick="deleteHeldTransaction(' + i + ')">🗑</button></div>';
+        list.appendChild(div);
+    });
+}
+function toggleHeldSection() {
+    var section = document.getElementById('held-section');
+    var icon = document.getElementById('held-toggle-icon');
+    if (section.classList.contains('open')) {
+        section.classList.remove('open');
+        icon.textContent = '▼';
+    } else {
+        section.classList.add('open');
+        icon.textContent = '▲';
+    }
+}
+
+// ========== QUICK PAY ==========
+function quickPayNominal(amount) {
+    document.getElementById('uang-bayar').value = amount.toLocaleString('id-ID');
+    hitungKembalian();
+}
+function quickPayExact() {
+    var totalText = document.getElementById('total-price').textContent;
+    var total = parseRupiah(totalText);
+    document.getElementById('uang-bayar').value = total.toLocaleString('id-ID');
+    hitungKembalian();
+}
+
 // ========== GUDANG FUNCTIONS ==========
 function switchTab(tab) {
-    var isRestock = tab === 'restock';
-    document.getElementById('form-restock-panel').classList.toggle('hidden', !isRestock);
-    document.getElementById('form-batch-panel').classList.toggle('hidden', isRestock);
-    document.getElementById('tab-restock-btn').classList.toggle('active', isRestock);
-    document.getElementById('tab-batch-btn').classList.toggle('active', !isRestock);
+    var tabs = ['restock', 'batch', 'opname', 'mutasi', 'log'];
+    tabs.forEach(function(t) {
+        var isCurrent = t === tab;
+        document.getElementById('form-' + t + '-panel').classList.toggle('hidden', !isCurrent);
+        document.getElementById('tab-' + t + '-btn').classList.toggle('active', isCurrent);
+    });
+    if (tab === 'log') loadRestockLog();
+    if (tab === 'mutasi') loadMutasiLog();
+    if (tab === 'opname') loadOpnameProductSelect();
 }
 
 function filterRestock() {
@@ -871,7 +1493,6 @@ function selectRestockProduct(id) {
     document.getElementById('restock-stok-kini').textContent = p.stock;
     document.getElementById('restock-qty').value = '';
     document.getElementById('restock-kdl').value = '';
-    // Scroll ke form
     document.getElementById('restock-qty').focus();
 }
 
@@ -881,21 +1502,197 @@ function doRestock() {
     if (qty <= 0) { showToast('Masukkan jumlah stok!', 'error'); return; }
     var kdl = document.getElementById('restock-kdl').value;
     var id = _restockSelectedId;
+    var pName = productsData[id].name;
     
     if (kdl) {
         productsRef.child(id + '/batches').push({ stock: qty, kadaluarsa: kdl });
-        // Update kadaluarsa utama ke yang paling dekat
         var currentExp = productsData[id].kadaluarsa;
         if (!currentExp || (kdl && new Date(kdl) < new Date(currentExp))) {
             productsRef.child(id + '/kadaluarsa').set(kdl);
         }
     }
     productsRef.child(id + '/stock').transaction(s => (s||0) + qty);
-    showToast(`✅ +${qty} stok ditambahkan ke ${productsData[id].name}`, 'success');
+
+    // Log restock
+    restockLogRef.push({
+        product_id: id,
+        product_name: pName,
+        qty: qty,
+        kadaluarsa: kdl || null,
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        user: 'Gudang'
+    });
+
+    // Log to stok_mutasi
+    stokMutasiRef.push({
+        product_id: id,
+        product_name: pName,
+        qty_change: qty,
+        reason: 'Restock',
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        user: 'Gudang'
+    });
+
+    showToast(`✅ +${qty} stok ditambahkan ke ${pName}`, 'success');
     _restockSelectedId = null;
     document.getElementById('restock-selected').style.display = 'none';
     document.getElementById('restock-qty').value = '';
     document.getElementById('restock-search').value = '';
+}
+
+function loadRestockLog() {
+    var container = document.getElementById('restock-log-list');
+    if (!container) return;
+    var entries = [];
+    if (restockLogData) {
+        Object.entries(restockLogData).forEach(function(entry) {
+            entries.push(entry[1]);
+        });
+    }
+    entries.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+    if (entries.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:var(--ink3); padding:20px;">Belum ada riwayat restock</div>';
+        return;
+    }
+    container.innerHTML = '';
+    entries.slice(0, 50).forEach(function(e) {
+        var div = document.createElement('div');
+        div.className = 'restock-log-entry';
+        var timeStr = e.timestamp ? new Date(e.timestamp).toLocaleString('id-ID') : '-';
+        div.innerHTML = '<div><div class="log-product">' + (e.product_name || '-') + '</div><div class="log-time">' + timeStr + '</div></div>' +
+            '<div class="log-qty">+' + (e.qty || 0) + ' pcs</div>';
+        container.appendChild(div);
+    });
+}
+
+// ========== STOK OPNAME ==========
+function loadOpnameProductSelect() {
+    var sel = document.getElementById('opname-product-select');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- Pilih Produk --</option>';
+    Object.keys(productsData).sort(function(a,b) {
+        return (productsData[a].name || '').localeCompare(productsData[b].name || '');
+    }).forEach(function(id) {
+        var opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = productsData[id].name;
+        sel.appendChild(opt);
+    });
+}
+
+function loadOpnameData() {
+    var id = document.getElementById('opname-product-select').value;
+    var container = document.getElementById('opname-data-container');
+    if (!id || !productsData[id]) {
+        container.style.display = 'none';
+        return;
+    }
+    var p = productsData[id];
+    container.style.display = 'block';
+    document.getElementById('opname-stok-sistem').textContent = (p.stock || 0);
+    document.getElementById('opname-stok-fisik').value = '';
+    document.getElementById('opname-selisih').textContent = '0';
+    document.getElementById('opname-selisih').classList.remove('negatif');
+    document.getElementById('opname-reason').value = 'Koreksi';
+}
+
+function hitungSelisih() {
+    var sistem = parseInt(document.getElementById('opname-stok-sistem').textContent) || 0;
+    var fisik = parseInt(document.getElementById('opname-stok-fisik').value) || 0;
+    var selisih = fisik - sistem;
+    var el = document.getElementById('opname-selisih');
+    el.textContent = (selisih >= 0 ? '+' : '') + selisih;
+    el.classList.toggle('negatif', selisih < 0);
+}
+
+function simpanOpname() {
+    var id = document.getElementById('opname-product-select').value;
+    if (!id || !productsData[id]) { showToast('Pilih produk dulu!', 'error'); return; }
+    var fisik = parseInt(document.getElementById('opname-stok-fisik').value);
+    if (isNaN(fisik) || fisik < 0) { showToast('Masukkan stok fisik!', 'error'); return; }
+    var sistem = parseInt(productsData[id].stock) || 0;
+    var selisih = fisik - sistem;
+    var reason = document.getElementById('opname-reason').value;
+    var pName = productsData[id].name;
+
+    // Update stock to physical count
+    productsRef.child(id + '/stock').set(fisik);
+
+    // Log to stok_mutasi
+    stokMutasiRef.push({
+        product_id: id,
+        product_name: pName,
+        qty_change: selisih,
+        reason: reason,
+        old_stock: sistem,
+        new_stock: fisik,
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        user: 'Gudang'
+    });
+
+    showToast('✅ Stok opname disimpan! ' + pName + ': ' + sistem + ' → ' + fisik + (selisih !== 0 ? ' (selisih ' + (selisih >= 0 ? '+' : '') + selisih + ')' : ''), 'success');
+    
+    // Reset form
+    document.getElementById('opname-stok-fisik').value = '';
+    document.getElementById('opname-selisih').textContent = '0';
+    document.getElementById('opname-selisih').classList.remove('negatif');
+    document.getElementById('opname-stok-sistem').textContent = fisik;
+}
+
+// ========== MUTASI STOK ==========
+function loadMutasiLog() {
+    var container = document.getElementById('mutasi-log-list');
+    if (!container) return;
+    var entries = [];
+    if (stokMutasiData) {
+        Object.entries(stokMutasiData).forEach(function(entry) {
+            entries.push(entry[1]);
+        });
+    }
+    entries.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+    if (entries.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:var(--ink3); padding:20px;">Belum ada mutasi stok</div>';
+        return;
+    }
+    container.innerHTML = '';
+    entries.slice(0, 50).forEach(function(e) {
+        var div = document.createElement('div');
+        var qtyChange = e.qty_change || 0;
+        div.className = 'mutasi-entry ' + (qtyChange >= 0 ? 'add' : 'reduce');
+        var timeStr = e.timestamp ? new Date(e.timestamp).toLocaleString('id-ID') : '-';
+        div.innerHTML = '<div><div class="mutasi-product">' + (e.product_name || '-') + '</div><div class="mutasi-reason">' + (e.reason || '-') + '</div><div class="mutasi-time">' + timeStr + '</div></div>' +
+            '<div class="mutasi-qty ' + (qtyChange >= 0 ? 'positive' : 'negative') + '">' + (qtyChange >= 0 ? '+' : '') + qtyChange + '</div>';
+        container.appendChild(div);
+    });
+}
+
+// ========== ALERT FILTER ==========
+function toggleAlertFilter(type) {
+    _activeAlertFilter = type;
+    // Update chip active states
+    document.getElementById('alert-lowstock-chip').classList.toggle('active', type === 'lowstock');
+    document.getElementById('alert-expired-chip').classList.toggle('active', type === 'expired');
+    document.getElementById('alert-all-chip').classList.toggle('active', type === 'all');
+    renderStockTable();
+}
+
+function updateAlertBar() {
+    var today = new Date();
+    today.setHours(0,0,0,0);
+    var lowCount = 0;
+    var expCount = 0;
+    Object.values(productsData).forEach(function(p) {
+        if (!p || !p.name) return;
+        var stok = parseInt(p.stock) || 0;
+        if (stok <= appConfig.lowStockThreshold) lowCount++;
+        if (p.kadaluarsa) {
+            var exp = new Date(p.kadaluarsa);
+            exp.setHours(0,0,0,0);
+            if (exp < today) expCount++;
+        }
+    });
+    document.getElementById('alert-lowstock-count').textContent = lowCount;
+    document.getElementById('alert-expired-count').textContent = expCount;
 }
 
 function loadProductSelect() {
@@ -946,6 +1743,24 @@ function addNewBatch() {
             productsRef.child(id + '/kadaluarsa').set(exp);
         }
     }
+    // Log batch addition as restock
+    restockLogRef.push({
+        product_id: id,
+        product_name: productsData[id].name,
+        qty: stok,
+        kadaluarsa: exp || null,
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        user: 'Gudang'
+    });
+    // Log to stok_mutasi
+    stokMutasiRef.push({
+        product_id: id,
+        product_name: productsData[id].name,
+        qty_change: stok,
+        reason: 'Restock Batch',
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        user: 'Gudang'
+    });
     showToast('Batch ditambahkan', 'success');
     document.getElementById('new-batch-exp').value = '';
     document.getElementById('new-batch-stok').value = '';
@@ -956,6 +1771,15 @@ function deleteBatch(pid, bid, stock) {
     if (!confirm(`Hapus batch ini? Stok ${stock} akan dikurangi.`)) return;
     productsRef.child(pid + '/batches/' + bid).remove();
     productsRef.child(pid + '/stock').transaction(s => Math.max(0, (s||0) - stock));
+    // Log to stok_mutasi
+    stokMutasiRef.push({
+        product_id: pid,
+        product_name: productsData[pid] ? productsData[pid].name : 'Unknown',
+        qty_change: -stock,
+        reason: 'Hapus Batch',
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        user: 'Gudang'
+    });
     showToast('Batch dihapus', 'success');
     setTimeout(() => loadBatchForProduct(), 300);
 }
@@ -971,66 +1795,153 @@ function getExpiryStatus(tgl) {
     return { status: 'ok', label: 'Aman', cls: 'ok' };
 }
 
+// ========== CATEGORY FILTER ==========
+function loadCategoryFilter() {
+    var sel = document.getElementById('category-filter');
+    if (!sel) return;
+    var currentVal = sel.value;
+    var categories = {};
+    Object.values(productsData).forEach(function(p) {
+        if (p && p.kategori) {
+            categories[p.kategori] = true;
+        }
+    });
+    sel.innerHTML = '<option value="">Semua Kategori</option>';
+    Object.keys(categories).sort().forEach(function(cat) {
+        var opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        sel.appendChild(opt);
+    });
+    sel.value = currentVal;
+}
+
 function renderStockTable() {
     var tbody = document.getElementById('stock-table-body');
     if (!tbody) return;
     var search = document.getElementById('search-gudang').value.toLowerCase();
-    var items = Object.entries(productsData).filter(([id,p]) => p.name.toLowerCase().includes(search) || (p.barcode && p.barcode.toLowerCase().includes(search)));
+    var catFilter = document.getElementById('category-filter') ? document.getElementById('category-filter').value : '';
+    var today = new Date();
+    today.setHours(0,0,0,0);
+
+    var items = Object.entries(productsData).filter(([id,p]) => {
+        var matchSearch = p.name.toLowerCase().includes(search) || (p.barcode && p.barcode.toLowerCase().includes(search));
+        var matchCat = !catFilter || (p.kategori === catFilter);
+
+        // Alert filter
+        var matchAlert = true;
+        if (_activeAlertFilter === 'lowstock') {
+            var stok = parseInt(p.stock) || 0;
+            matchAlert = stok <= appConfig.lowStockThreshold;
+        } else if (_activeAlertFilter === 'expired') {
+            if (p.kadaluarsa) {
+                var exp = new Date(p.kadaluarsa);
+                exp.setHours(0,0,0,0);
+                matchAlert = exp < today;
+            } else {
+                matchAlert = false;
+            }
+        }
+
+        return matchSearch && matchCat && matchAlert;
+    });
+
     tbody.innerHTML = '';
+    var totalNilaiStok = 0;
+    var totalMargin = 0;
+
     items.forEach(([id, p]) => {
+        var stock = parseInt(p.stock) || 0;
+        var price = parseInt(p.price) || 0;
+        var hpp = parseInt(p.hpp) || 0;
+        var nilaiStok = price * stock;
+        var margin = price - hpp;
+        totalNilaiStok += nilaiStok;
+        totalMargin += margin * stock;
+
         var expStatus = getExpiryStatus(p.kadaluarsa);
-        var expHtml = expStatus ? `<span class="exp-badge ${expStatus.cls}">${expStatus.label}</span>` : '<span class="exp-badge none">—</span>';
+        var expHtml = expStatus ? '<span class="exp-badge ' + expStatus.cls + '">' + expStatus.label + '</span>' : '<span class="exp-badge none">—</span>';
+        
+        var marginColor = margin > 0 ? 'var(--green)' : (margin < 0 ? 'var(--red)' : 'var(--ink3)');
+        var marginText = hpp > 0 ? '<span style="color:' + marginColor + '; font-weight:700; font-family:DM Mono,monospace; font-size:11px;">Rp ' + margin.toLocaleString('id-ID') + '</span>' : '<span style="color:var(--ink3); font-size:11px;">-</span>';
+
         var row = tbody.insertRow();
         row.id = 'row-' + id;
         row.innerHTML = `
             <td><strong>${p.name}</strong><br><span style="font-size:10px; color:var(--ink3);">${p.barcode || '-'}</span></td>
-            <td style="font-family:monospace;">Rp ${(p.price||0).toLocaleString('id-ID')}</td>
-            <td><div style="display:flex; gap:4px; align-items:center;">
+            <td style="font-family:monospace; font-size:11px; color:var(--ink3);">Rp ${hpp > 0 ? hpp.toLocaleString('id-ID') : '-'}</td>
+            <td style="font-family:monospace; font-size:12px;">Rp ${price.toLocaleString('id-ID')}</td>
+            <td><div style="display:flex; gap:3px; align-items:center;">
                 <button class="sctrl-btn minus" onclick="adjustStock('${id}',-1)">−</button>
-                <input type="number" class="stock-input" id="stock-${id}" value="${p.stock}" min="0" onchange="saveStock('${id}',this.value)">
+                <input type="number" class="stock-input" id="stock-${id}" value="${stock}" min="0" onchange="saveStock('${id}',this.value)">
                 <button class="sctrl-btn plus" onclick="adjustStock('${id}',1)">+</button>
             </div></td>
+            <td style="font-family:monospace; font-size:12px; font-weight:600;">Rp ${nilaiStok.toLocaleString('id-ID')}</td>
+            <td>${marginText}</td>
             <td>${expHtml}</td>
-            <td><div class="action-btns"><button class="edit-btn" onclick="openEditModal('${id}')">✏</button><button class="del-btn" onclick="deleteProduct('${id}')">🗑</button></div>
+            <td><div class="action-btns"><a href="produk.html" class="detail-btn" title="Lihat detail di Produk">📊 Detail</a></div></td>
         `;
     });
+
+    // Summary row
+    if (items.length > 0) {
+        var summaryRow = document.createElement('tr');
+        summaryRow.className = 'summary-row';
+        summaryRow.innerHTML = '<td colspan="4" style="text-align:right; font-size:11px; text-transform:uppercase; color:var(--ink3); font-weight:700;">TOTAL (' + items.length + ' produk)</td>' +
+            '<td style="font-family:DM Mono,monospace; font-weight:800;">Rp ' + totalNilaiStok.toLocaleString('id-ID') + '</td>' +
+            '<td style="font-family:DM Mono,monospace; color:' + (totalMargin >= 0 ? 'var(--green)' : 'var(--red)') + '; font-weight:800;">Rp ' + totalMargin.toLocaleString('id-ID') + '</td>' +
+            '<td></td><td></td>';
+        tbody.appendChild(summaryRow);
+    }
+
+    // Update alert bar
+    updateAlertBar();
+    // Refresh category filter
+    loadCategoryFilter();
 }
 
 function adjustStock(id, delta) {
-    var input = document.getElementById(`stock-${id}`);
-    var newVal = Math.max(0, (parseInt(input.value)||0) + delta);
+    var input = document.getElementById('stock-' + id);
+    var oldVal = parseInt(input.value) || 0;
+    var newVal = Math.max(0, oldVal + delta);
     input.value = newVal;
     productsRef.child(id + '/stock').set(newVal);
+
+    // Log to stok_mutasi
+    if (productsData[id]) {
+        stokMutasiRef.push({
+            product_id: id,
+            product_name: productsData[id].name,
+            qty_change: delta,
+            reason: 'Penyesuaian Manual',
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+            user: 'Gudang'
+        });
+    }
 }
 
-function saveStock(id, val) { productsRef.child(id + '/stock').set(parseInt(val)||0); }
+function saveStock(id, val) {
+    var newVal = parseInt(val) || 0;
+    var oldVal = parseInt(productsData[id].stock) || 0;
+    productsRef.child(id + '/stock').set(newVal);
+
+    // Log to stok_mutasi
+    if (productsData[id]) {
+        var diff = newVal - oldVal;
+        if (diff !== 0) {
+            stokMutasiRef.push({
+                product_id: id,
+                product_name: productsData[id].name,
+                qty_change: diff,
+                reason: 'Penyesuaian Manual',
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                user: 'Gudang'
+            });
+        }
+    }
+}
 
 function deleteProduct(id) { if(confirm('Hapus produk ini dari database?')) productsRef.child(id).remove(); }
-
-function openEditModal(id) {
-    var p = productsData[id];
-    document.getElementById('edit-id').value = id;
-    document.getElementById('edit-name').value = p.name;
-    document.getElementById('edit-price').value = (p.price||0).toLocaleString('id-ID');
-    document.getElementById('edit-stock').value = p.stock;
-    document.getElementById('edit-barcode').value = p.barcode || '';
-    document.getElementById('edit-expiry').value = p.kadaluarsa || '';
-    document.getElementById('edit-modal').classList.remove('hidden');
-}
-function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); }
-function saveEditProduct() {
-    var id = document.getElementById('edit-id').value;
-    var name = document.getElementById('edit-name').value.trim();
-    var price = parseRupiah(document.getElementById('edit-price').value);
-    var stock = parseInt(document.getElementById('edit-stock').value)||0;
-    var barcode = document.getElementById('edit-barcode').value.trim();
-    var expiry = document.getElementById('edit-expiry').value;
-    if(!name || !price) { showToast('Nama & harga wajib', 'error'); return; }
-    var data = { name, price, stock, updated_at: Date.now() };
-    if(barcode) data.barcode = barcode;
-    if(expiry) data.kadaluarsa = expiry;
-    productsRef.child(id).update(data).then(() => { showToast('✅ Produk diperbarui', 'success'); closeEditModal(); });
-}
 
 // ========== KASIR FUNCTIONS ==========
 function loadPelangganDropdown() {
@@ -1066,16 +1977,62 @@ function clearSearch() { document.getElementById('search-kasir').value = ''; doc
 
 function addToCart(id) {
     var p = productsData[id];
-    if(p.stock<=0) { showToast('Stok habis!','error'); return; }
+    var stok = parseInt(p.stock) || 0;
+
+    // Stock = 0 check
+    if (stok <= 0) {
+        showToast('Stok habis! Tidak bisa menambahkan ' + p.name, 'error');
+        return;
+    }
+
     var existing = cart.find(i => i.id === id);
-    if(existing) existing.qty++;
-    else cart.push({ id, name: p.name, qty: 1, price: p.price });
+    var currentQty = existing ? existing.qty : 0;
+
+    // Check if adding would exceed stock
+    if (currentQty >= stok) {
+        showToast('⚠️ Stok ' + p.name + ' tinggal ' + stok + ' pcs!', 'warning');
+        return;
+    }
+
+    if (existing) {
+        existing.qty++;
+        // Check low stock threshold after increment
+        var remaining = stok - existing.qty;
+        if (remaining <= 0) {
+            existing.qty = stok;
+            showToast('⚠️ Stok ' + p.name + ' habis! Dibatasi ' + stok + ' pcs', 'warning');
+        } else if (remaining <= appConfig.lowStockThreshold) {
+            showToast('⚠️ Stok ' + p.name + ' tinggal ' + remaining + ' pcs!', 'warning');
+        }
+    } else {
+        cart.push({ id, name: p.name, qty: 1, price: p.price });
+        // Low stock check for new item
+        if (stok <= appConfig.lowStockThreshold) {
+            showToast('⚠️ Stok ' + p.name + ' tinggal ' + stok + ' pcs!', 'warning');
+        }
+    }
     renderCart();
 }
 
 function changeQty(idx, delta) {
-    cart[idx].qty += delta;
-    if(cart[idx].qty <= 0) cart.splice(idx,1);
+    var item = cart[idx];
+    var p = productsData[item.id];
+    var stok = parseInt(p.stock) || 0;
+    var newQty = item.qty + delta;
+    
+    if (newQty > stok) {
+        item.qty = stok;
+        showToast('⚠️ Stok ' + item.name + ' tinggal ' + stok + ' pcs!', 'warning');
+    } else {
+        item.qty = newQty;
+    }
+    
+    if (item.qty <= 0) cart.splice(idx, 1);
+    renderCart();
+}
+
+function removeFromCart(idx) {
+    cart.splice(idx, 1);
     renderCart();
 }
 
@@ -1088,11 +2045,12 @@ function renderCart() {
         totalQty += item.qty;
         var div = document.createElement('div');
         div.className = 'cart-row';
-        div.innerHTML = `<div><strong>${item.name}</strong><br>Rp ${item.price.toLocaleString('id-ID')} x ${item.qty}</div>
+        div.innerHTML = `<div class="cart-row-info"><strong>${item.name}</strong><span>Rp ${item.price.toLocaleString('id-ID')} x ${item.qty} = Rp ${(item.price * item.qty).toLocaleString('id-ID')}</span></div>
                         <div class="qty-ctrl">
                             <button class="qty-btn" onclick="changeQty(${i},-1)">−</button>
-                            <span style="min-width:30px; text-align:center;">${item.qty}</span>
+                            <span style="min-width:30px; text-align:center; font-weight:700;">${item.qty}</span>
                             <button class="qty-btn" onclick="changeQty(${i},1)">+</button>
+                            <button class="cart-del-btn" onclick="removeFromCart(${i})">🗑</button>
                         </div>`;
         container.appendChild(div);
     });
@@ -1126,10 +2084,47 @@ function processPayment() {
         var bayar = parseInt(document.getElementById('uang-bayar').value.replace(/\./g,''))||0;
         if(bayar < total) { showToast('Uang kurang!','error'); return; }
     }
+    // Save transaction to Firebase
+    var trxData = {
+        items: cart.map(function(c) { return { id: c.id, name: c.name, qty: c.qty, price: c.price, subtotal: c.price * c.qty }; }),
+        total: total,
+        metode: activePayMethod,
+        pelanggan_id: document.getElementById('kasir-pelanggan').value || null,
+        tanggal: new Date().toISOString(),
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    };
+    if (activePayMethod === 'Tunai') {
+        trxData.bayar = parseRupiah(document.getElementById('uang-bayar').value);
+        trxData.kembalian = trxData.bayar - total;
+    } else if (activePayMethod === 'Transfer') {
+        trxData.bank = document.getElementById('transfer-bank').value;
+    } else if (activePayMethod === 'Kartu') {
+        trxData.bank = document.getElementById('kartu-bank').value;
+        trxData.nomor_akhir = document.getElementById('kartu-nomor').value;
+    }
+    transaksiRef.push(trxData);
+
+    // Deduct stock
+    cart.forEach(function(item) {
+        productsRef.child(item.id + '/stock').transaction(function(s) {
+            return Math.max(0, (s || 0) - item.qty);
+        });
+        // Log to stok_mutasi
+        stokMutasiRef.push({
+            product_id: item.id,
+            product_name: item.name,
+            qty_change: -item.qty,
+            reason: 'Penjualan',
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+            user: 'Kasir'
+        });
+    });
+
     showToast('✅ Pembayaran berhasil!', 'success');
     cart = [];
     renderCart();
     document.getElementById('uang-bayar').value = '';
+    document.getElementById('kembalian-val').textContent = 'Rp 0';
 }
 
 // ========== BARCODE SCANNER ==========
@@ -1209,7 +2204,6 @@ function handleBarcode(code) {
             selectRestockProduct(found[0]);
             showToast(found[1].name + ' - siap tambah stok', 'success');
             closeScanner();
-            // Highlight row di tabel
             var row = document.getElementById('row-' + found[0]);
             if(row) {
                 row.classList.add('scanner-highlight');
@@ -1226,7 +2220,6 @@ function handleBarcode(code) {
             document.getElementById('search-gudang').value = found[1].name;
             renderStockTable();
             showToast(found[1].name + ' - Stok: ' + found[1].stock, 'success');
-            // Highlight row
             var row = document.getElementById('row-' + found[0]);
             if(row) {
                 row.classList.add('scanner-highlight');
@@ -1258,11 +2251,25 @@ productsRef.on('value', snap => {
     if(localStorage.getItem('appRole') === 'gudang') {
         renderStockTable();
         loadProductSelect();
+        loadCategoryFilter();
         if(document.getElementById('batch-product-select').value) loadBatchForProduct();
     }
+    updateDashboardStats();
 });
 pelangganRef.on('value', snap => { pelangganData = snap.val() || {}; if(localStorage.getItem('appRole') === 'kasir') loadPelangganDropdown(); });
-transaksiRef.on('value', snap => { transaksiData = snap.val() || {}; });
+transaksiRef.on('value', snap => { transaksiData = snap.val() || {}; updateDashboardStats(); });
+restockLogRef.on('value', snap => {
+    restockLogData = snap.val() || {};
+    if (localStorage.getItem('appRole') === 'gudang') {
+        loadRestockLog();
+    }
+});
+stokMutasiRef.on('value', snap => {
+    stokMutasiData = snap.val() || {};
+    if (localStorage.getItem('appRole') === 'gudang') {
+        loadMutasiLog();
+    }
+});
 
 // Tutup dropdown saat klik di luar
 document.addEventListener('click', function(e) {

@@ -3,6 +3,7 @@ var tokoConfig = {
     nama:    "TOKO Bu Anis",
     alamat:  "Margoyoso, Jepara",
     telepon: "",
+    email:   "",
     footer:  "Terima kasih! Belanja lagi ya 🛍️"
 };
 
@@ -25,3 +26,21 @@ var appConfig = {
     expiryWarningDays: 30,
     holdMaxSlots: 5
 };
+
+// ========== PRODUK KONFIGURASI ==========
+var productConfig = {
+    categories: ['Makanan', 'Minuman', 'Snack', 'Rokok', 'Sabun & Deterjen', 'Bumbu Dapur', 'Minyak & Gas', 'Obat-obatan', 'ATK', 'Lainnya'],
+    units: ['pcs', 'kg', 'liter', 'dus', 'pack', 'box', 'meter', 'roll', 'botol', 'bungkus', 'ikat', 'rim']
+};
+
+// ========== PPN & HUTANG KONFIGURASI ==========
+var fiturConfig = {
+    ppnEnabled: false,
+    ppnRate: 11, // persen
+    hutangEnabled: true,
+    maxHutangPerPelanggan: 5000000
+};
+
+// ========== GLOBAL ALIASES ==========
+var productCategories = productConfig.categories;
+var productUnits = productConfig.units;
